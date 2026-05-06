@@ -1,6 +1,9 @@
 import { buildTeamSummaries } from "./aggregate.ts";
+import { loadProfile } from "./auth.ts";
 import type { TeamSummary } from "./models/teamModels.ts";
+import { can } from "./permissions.ts";
 import { showTeamDetail } from "./teamDetailView.ts";
+import { downloadScoutsFromFirebase, processSyncQueue } from "./sync.ts";
 import {
   getAllMatchScouts,
   getAllPitScouts,
@@ -122,6 +125,7 @@ export function initTeamsView(): void {
   const matchFilter = getElement<HTMLSelectElement>("teams-match-filter");
   const emptyState = getElement<HTMLElement>("teams-empty-state");
   const count = getElement<HTMLElement>("teams-count");
+  const syncButton = getElement<HTMLButtonElement>("teams-sync-btn");
 
   let summaries: TeamSummary[] = [];
   let renderedSummaries: TeamSummary[] = [];
@@ -150,6 +154,28 @@ export function initTeamsView(): void {
   };
 
   const loadAndRender = async (): Promise<void> => {
+    const profile = await loadProfile();
+
+    if (!can("view-teams", profile?.role)) {
+      syncButton?.classList.add("hidden");
+      summaries = [];
+      renderedSummaries = [];
+      list.innerHTML = "";
+      emptyState?.classList.remove("hidden");
+
+      if (emptyState) {
+        emptyState.textContent = "Your role cannot view team summaries.";
+      }
+
+      if (count) {
+        count.textContent = "0 teams";
+      }
+
+      return;
+    }
+
+    syncButton?.classList.toggle("hidden", !can("sync", profile?.role));
+
     const [matchScouts, pitScouts] = await Promise.all([
       getAllMatchScouts(),
       getAllPitScouts(),
@@ -202,6 +228,28 @@ export function initTeamsView(): void {
     "click",
     showHomeScreen,
   );
+  syncButton?.addEventListener("click", async () => {
+    const eventKey =
+      summaries.find((summary) => summary.eventKey)?.eventKey ??
+      window.prompt("Event key to sync") ??
+      "";
+
+    if (!eventKey.trim()) {
+      return;
+    }
+
+    syncButton.disabled = true;
+
+    try {
+      await processSyncQueue();
+      await downloadScoutsFromFirebase(eventKey);
+      await loadAndRender();
+    } catch (error) {
+      console.error("Failed to sync scouts:", error);
+    } finally {
+      syncButton.disabled = false;
+    }
+  });
 
   window.addEventListener("scout:data-updated", () => {
     void loadAndRender();

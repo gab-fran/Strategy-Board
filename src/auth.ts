@@ -21,6 +21,14 @@ export async function loadProfile(): Promise<UserProfile | undefined> {
     return undefined;
   }
 
+  if (
+    !profile.teamNumber?.trim() ||
+    !profile.userName?.trim() ||
+    !profile.role?.trim()
+  ) {
+    return undefined;
+  }
+
   return profile;
 }
 

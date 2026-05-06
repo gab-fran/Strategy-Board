@@ -1,3 +1,6 @@
+import { loadProfile } from "./auth.ts";
+import { can } from "./permissions.ts";
+
 type HomeViewOptions = {
   activeEventKey?: string;
   strategyBoardElementId?: string;
@@ -34,6 +37,7 @@ export class HomeView {
     this.setActiveEvent(options.activeEventKey);
     this.updateConnectionStatus();
     this.bindEvents();
+    void this.applyPermissions();
   }
 
   public showHome(): void {
@@ -75,6 +79,27 @@ export class HomeView {
 
     window.addEventListener("online", () => this.updateConnectionStatus());
     window.addEventListener("offline", () => this.updateConnectionStatus());
+  }
+
+  private async applyPermissions(): Promise<void> {
+    const profile = await loadProfile();
+
+    getElement<HTMLButtonElement>("home-open-strategy-board-btn")?.classList.toggle(
+      "hidden",
+      !can("view-strategy-board", profile?.role),
+    );
+    getElement<HTMLButtonElement>("home-open-teams-btn")?.classList.toggle(
+      "hidden",
+      !can("view-teams", profile?.role),
+    );
+    getElement<HTMLButtonElement>("home-open-scouting-btn")?.classList.toggle(
+      "hidden",
+      !can("create-scout", profile?.role),
+    );
+    getElement<HTMLButtonElement>("home-open-pit-scout-btn")?.classList.toggle(
+      "hidden",
+      !can("create-scout", profile?.role),
+    );
   }
 
   private openStrategyBoard(): void {

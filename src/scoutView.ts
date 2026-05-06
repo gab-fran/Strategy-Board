@@ -1,5 +1,6 @@
 import { loadProfile } from "./auth.ts";
 import type { MatchScoutEntry, PitScoutEntry } from "./models/scoutModels.ts";
+import { can } from "./permissions.ts";
 import {
   getPitScoutByTeam,
   saveMatchScout,
@@ -88,6 +89,17 @@ const setPitStatus = (
   status.classList.toggle("hidden", !message);
 };
 
+const setButtonVisible = (id: string, visible: boolean): void => {
+  const button = getElement<HTMLButtonElement>(id);
+
+  if (!button) {
+    return;
+  }
+
+  button.classList.toggle("hidden", !visible);
+  button.disabled = !visible;
+};
+
 const resetMatchScoutForm = (): void => {
   getRequiredElement<HTMLFormElement>("match-scout-form").reset();
   setStatus("", "idle");
@@ -127,6 +139,11 @@ const createMatchScoutEntry = async (): Promise<MatchScoutEntry | undefined> => 
 
   if (!profile) {
     setStatus("Save your profile before scouting a match.", "error");
+    return undefined;
+  }
+
+  if (!can("create-scout", profile.role)) {
+    setStatus("Your role cannot create match scouts.", "error");
     return undefined;
   }
 
@@ -207,6 +224,20 @@ const createPitScoutEntry = async (
     return undefined;
   }
 
+  if (!can("create-scout", profile.role)) {
+    setPitStatus("Your role cannot create pit scouts.", "error");
+    return undefined;
+  }
+
+  if (
+    existingEntry &&
+    existingEntry.createdByTeam !== profile.teamNumber &&
+    !can("edit", profile.role)
+  ) {
+    setPitStatus("Your role cannot edit pit scouts from another team.", "error");
+    return undefined;
+  }
+
   const teamNumber = readText("pit-scout-team");
 
   if (!teamNumber) {
@@ -241,6 +272,10 @@ export function initMatchScout(): void {
   if (!form) {
     return;
   }
+
+  void loadProfile().then((profile) => {
+    setButtonVisible("match-scout-save-btn", can("create-scout", profile?.role));
+  });
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -283,6 +318,19 @@ export function initPitScout(): void {
   let loadedEntry: PitScoutEntry | undefined;
   let loadCounter = 0;
 
+  const applyPitScoutPermissions = async (): Promise<void> => {
+    const profile = await loadProfile();
+    const canCreateScout = can("create-scout", profile?.role);
+    const canEditLoadedEntry =
+      !loadedEntry ||
+      loadedEntry.createdByTeam === profile?.teamNumber ||
+      can("edit", profile?.role);
+
+    setButtonVisible("pit-scout-save-btn", canCreateScout && canEditLoadedEntry);
+  };
+
+  void applyPitScoutPermissions();
+
   const teamInput = getElement<HTMLInputElement>("pit-scout-team");
 
   teamInput?.addEventListener("input", async () => {
@@ -292,6 +340,7 @@ export function initPitScout(): void {
 
     if (!teamNumber) {
       setPitStatus("", "idle");
+      void applyPitScoutPermissions();
       return;
     }
 
@@ -310,6 +359,8 @@ export function initPitScout(): void {
       clearPitScoutDetails();
       setPitStatus("No pit scout saved for this team yet.", "idle");
     }
+
+    void applyPitScoutPermissions();
   });
 
   form.addEventListener("submit", async (event) => {
@@ -320,11 +371,13 @@ export function initPitScout(): void {
       const entry = await createPitScoutEntry(loadedEntry);
 
       if (!entry) {
+        void applyPitScoutPermissions();
         return;
       }
 
       await savePitScout(entry);
       loadedEntry = entry;
+      void applyPitScoutPermissions();
       setPitStatus("Pit scout saved on this device.", "success");
       console.info("Saved pit scout entry:", entry);
       window.dispatchEvent(new Event("scout:data-updated"));
@@ -343,6 +396,7 @@ export function initPitScout(): void {
     () => {
       loadedEntry = undefined;
       resetPitScoutForm();
+      void applyPitScoutPermissions();
     },
   );
 }

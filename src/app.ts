@@ -6,6 +6,7 @@ import { HomeView } from "./homeView.ts";
 import { initMatchScout, initPitScout } from "./scoutView.ts";
 import { initTeamDetailView } from "./teamDetailView.ts";
 import { initTeamsView } from "./teamsView.ts";
+import { processSyncQueue } from "./sync.ts";
 import { registerSW } from "virtual:pwa-register";
 
 // Polyfill for CanvasRenderingContext2D.roundRect — not available in Safari < 16 (iOS 15 and earlier)
@@ -41,6 +42,11 @@ import { injectSpeedInsights } from "@vercel/speed-insights";
 
 inject();
 injectSpeedInsights();
+
+window.addEventListener("online", () => {
+  console.info("[Sync] Browser is online; processing scout sync queue.");
+  void processSyncQueue();
+});
 
 const getActiveEventKey = (model: Model): string | undefined => {
   const matchWithEvent = model.matches.find((match) => match.tbaEventKey);

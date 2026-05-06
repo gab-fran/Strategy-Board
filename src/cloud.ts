@@ -4,9 +4,18 @@ import {
   doc,
   setDoc,
   getDoc,
+  collection,
+  getDocs,
+  query,
+  where,
   Firestore,
 } from "firebase/firestore";
 import { Match } from "./match";
+import type { MatchScoutEntry, PitScoutEntry } from "./models/scoutModels.ts";
+
+type CloudScoutEntry = (MatchScoutEntry | PitScoutEntry) & {
+  scoutType: "match" | "pit";
+};
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
@@ -129,4 +138,45 @@ export async function checkShareCode(shareCode: string): Promise<boolean> {
 
   const docSnap = await getDoc(doc(firestore, "matches", normalizedCode));
   return docSnap.exists();
+}
+
+function removeUndefinedValues<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+export async function uploadScout(entry: CloudScoutEntry): Promise<void> {
+  const firestore = getDb();
+  const payload = removeUndefinedValues({
+    ...entry,
+    syncStatus: "synced",
+    updatedAt: Date.now(),
+  });
+
+  await setDoc(doc(firestore, "scouting", entry.id), payload, { merge: true });
+}
+
+export async function downloadScouts(
+  eventKey: string,
+): Promise<CloudScoutEntry[]> {
+  const firestore = getDb();
+  const normalizedEventKey = eventKey.trim();
+
+  if (!normalizedEventKey) {
+    return [];
+  }
+
+  const snapshot = await getDocs(
+    query(
+      collection(firestore, "scouting"),
+      where("eventKey", "==", normalizedEventKey),
+    ),
+  );
+
+  return snapshot.docs.map(
+    (document) =>
+      ({
+        id: document.id,
+        ...document.data(),
+      }) as CloudScoutEntry,
+  );
 }

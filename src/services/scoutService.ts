@@ -1,13 +1,21 @@
 import { get, set } from "idb-keyval";
 import type { MatchScoutEntry, PitScoutEntry } from "../models/scoutModels.ts";
+import { queueForSync } from "../sync.ts";
 
 const MATCH_SCOUTS_KEY = "strategy-board:match-scouts";
 const PIT_SCOUTS_KEY = "strategy-board:pit-scouts";
 
+type SaveScoutOptions = {
+  queue?: boolean;
+};
+
 const normalizeTeamNumber = (teamNumber: string | number): string =>
   String(teamNumber).trim();
 
-export async function saveMatchScout(entry: MatchScoutEntry): Promise<void> {
+export async function saveMatchScout(
+  entry: MatchScoutEntry,
+  options: SaveScoutOptions = {},
+): Promise<void> {
   const scouts = await getAllMatchScouts();
   const existingIndex = scouts.findIndex((scout) => scout.id === entry.id);
 
@@ -18,6 +26,10 @@ export async function saveMatchScout(entry: MatchScoutEntry): Promise<void> {
   }
 
   await set(MATCH_SCOUTS_KEY, scouts);
+
+  if (options.queue !== false) {
+    await queueForSync(entry);
+  }
 }
 
 export async function getAllMatchScouts(): Promise<MatchScoutEntry[]> {
@@ -37,7 +49,10 @@ export async function getMatchScoutsByTeam(
   );
 }
 
-export async function savePitScout(entry: PitScoutEntry): Promise<void> {
+export async function savePitScout(
+  entry: PitScoutEntry,
+  options: SaveScoutOptions = {},
+): Promise<void> {
   const scouts = await getAllPitScouts();
   const normalizedTeamNumber = normalizeTeamNumber(entry.teamNumber);
   const existingIndex = scouts.findIndex(
@@ -51,6 +66,10 @@ export async function savePitScout(entry: PitScoutEntry): Promise<void> {
   }
 
   await set(PIT_SCOUTS_KEY, scouts);
+
+  if (options.queue !== false) {
+    await queueForSync(entry);
+  }
 }
 
 export async function getAllPitScouts(): Promise<PitScoutEntry[]> {
