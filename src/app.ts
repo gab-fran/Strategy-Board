@@ -1,5 +1,11 @@
 import { Model } from "./model.ts";
 import { preloadFieldImages } from "./manager.ts";
+import { hasProfile } from "./auth.ts";
+import { promptForIdentity } from "./authView.ts";
+import { HomeView } from "./homeView.ts";
+import { initMatchScout, initPitScout } from "./scoutView.ts";
+import { initTeamDetailView } from "./teamDetailView.ts";
+import { initTeamsView } from "./teamsView.ts";
 import { registerSW } from "virtual:pwa-register";
 
 // Polyfill for CanvasRenderingContext2D.roundRect — not available in Safari < 16 (iOS 15 and earlier)
@@ -35,6 +41,11 @@ import { injectSpeedInsights } from "@vercel/speed-insights";
 
 inject();
 injectSpeedInsights();
+
+const getActiveEventKey = (model: Model): string | undefined => {
+  const matchWithEvent = model.matches.find((match) => match.tbaEventKey);
+  return matchWithEvent?.tbaEventKey;
+};
 
 registerSW({
   immediate: true,
@@ -76,8 +87,6 @@ async function initializeApp(): Promise<void> {
   );
 
   try {
-    const model = new Model();
-
     // Start fetching modules and waiting for DOM immediately — parallel with DB load
     const moduleImports = Promise.all([
       import("./whiteboard.ts"),
@@ -93,11 +102,17 @@ async function initializeApp(): Promise<void> {
           })
         : Promise.resolve();
 
+    await domReady;
+
+    if (!(await hasProfile())) {
+      await promptForIdentity();
+    }
+
+    const model = new Model();
+
     console.log("Loading persistent data...");
     await model.loadPersistentData();
     console.log("Persistent data loaded");
-
-    await domReady;
 
     console.log("UI and QR modules imported");
     const [whiteboardModule, qrModule, viewModule] = await moduleImports;
@@ -108,6 +123,16 @@ async function initializeApp(): Promise<void> {
     const qrexport = new qrModule.QRExport();
 
     const _app = new viewModule.View(model, whiteboard, qrimport, qrexport);
+    const homeView = new HomeView({
+      activeEventKey: getActiveEventKey(model),
+      strategyBoardElementId: "home-container",
+    });
+    initMatchScout();
+    initPitScout();
+    initTeamDetailView();
+    initTeamsView();
+    homeView.showHome();
+
     console.log("Application initialized successfully");
     try {
       document.documentElement.setAttribute("data-app-ready", "true");

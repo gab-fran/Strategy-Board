@@ -17,6 +17,7 @@ import {
 } from "./search.ts";
 import { StatboticsService, type StatboticsMatchData } from "./statbotics.ts";
 import { Config } from "./config.ts";
+import { loadScoutPanel } from "./scoutPanel.ts";
 
 /**
  * Creates a debounced version of a function that delays its execution.
@@ -1136,18 +1137,23 @@ export class View {
     this.show(E.Whiteboard);
     this.hide(E.Home);
     updateCanvasSize();
+    this.ensureScoutPanel();
 
     const statboticsTab = document.getElementById(
       "whiteboard-toolbar-mode-statbotics",
     );
-    const hasTeams = [
+    const matchTeamValues = [
       match.redOne,
       match.redTwo,
       match.redThree,
       match.blueOne,
       match.blueTwo,
       match.blueThree,
-    ].some((t) => t && t.trim() !== "");
+    ];
+    const hasTeams = matchTeamValues.some((t) => t && t.trim() !== "");
+    const matchTeams = matchTeamValues
+      .map((team) => Number.parseInt(team, 10))
+      .filter((team) => Number.isFinite(team));
 
     if (hasTeams) {
       statboticsTab?.classList.remove("hidden");
@@ -1155,6 +1161,27 @@ export class View {
     } else {
       statboticsTab?.classList.add("hidden");
     }
+
+    void loadScoutPanel(matchTeams);
+  }
+
+  private ensureScoutPanel(): void {
+    if (document.getElementById("scout-panel")) {
+      return;
+    }
+
+    const statboticsContainer = document.getElementById(
+      "whiteboard-statbotics-container",
+    );
+
+    if (!statboticsContainer) {
+      return;
+    }
+
+    const scoutPanel = document.createElement("div");
+    scoutPanel.id = "scout-panel";
+    scoutPanel.className = "p-4 md:p-8 pt-0 md:pt-0";
+    statboticsContainer.appendChild(scoutPanel);
   }
 
   /**
