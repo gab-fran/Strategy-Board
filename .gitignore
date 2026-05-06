@@ -40,3 +40,5 @@ build-release.sh
 *.keystore
 *.jks
 keystore.properties
+
+.agent
