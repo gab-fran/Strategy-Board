@@ -24,6 +24,8 @@ export const Config = {
   blueThreeStationY: 1155,
 
   sharedTBAApiKey: import.meta.env.VITE_TBA_API_KEY || "",
+  firstApiUsername: import.meta.env.VITE_FIRST_API_USERNAME || "",
+  firstApiAuthToken: import.meta.env.VITE_FIRST_API_AUTH_TOKEN || "",
   releaseAnnouncement: {
     enabled: false,
     id: "release-2026-2-0",

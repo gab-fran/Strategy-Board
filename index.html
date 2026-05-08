@@ -311,9 +311,7 @@
             aria-hidden="true"
             aria-labelledby="home-screen-title"
         >
-            <div
-                class="flex min-h-full flex-col px-5 py-5 sm:px-8 md:px-12"
-            >
+            <div class="flex min-h-full flex-col gap-6 px-5 py-5 sm:px-8 md:px-12">
                 <header
                     class="flex flex-col gap-4 border-b border-[#1e1e1e] pb-5 sm:flex-row sm:items-center sm:justify-between"
                 >
@@ -325,7 +323,7 @@
                             StrategyHub
                         </h1>
                         <p class="mt-1 text-sm text-[#999] sm:text-base">
-                            Choose a module for this session.
+                            Select an official FIRST event to start scouting.
                         </p>
                     </div>
                     <div class="flex flex-wrap gap-2 text-sm">
@@ -350,88 +348,58 @@
                     </div>
                 </header>
 
-                <main
-                    class="grid flex-1 items-center gap-4 py-8 sm:grid-cols-2 lg:grid-cols-4"
-                >
-                    <button
-                        id="home-open-scouting-btn"
-                        class="flex min-h-44 flex-col items-start justify-between rounded-[8px] border border-[#2a2a2a] bg-[#141414] p-6 text-left transition-colors hover:border-[#555] hover:bg-[#1b1b1b]"
-                    >
-                        <span
-                            class="flex h-11 w-11 items-center justify-center rounded-[6px] bg-[#202020] text-[#e8e8e8]"
-                            aria-hidden="true"
+                <main class="flex flex-1 flex-col gap-5">
+                    <section class="grid gap-3 rounded-[8px] border border-[#242424] bg-[#121212] p-4 md:grid-cols-[1fr_auto_auto] md:items-end">
+                        <label class="block">
+                            <span class="mb-2 block text-sm font-medium text-[#cfcfcf]">Search events</span>
+                            <input
+                                id="home-event-search"
+                                type="search"
+                                autocomplete="off"
+                                placeholder="Name, city, state, or code"
+                                class="w-full rounded-[6px] border border-[#2a2a2a] bg-[#0d0d0d] px-4 py-3 text-base text-[#e8e8e8] outline-0 focus:border-[#666]"
+                            />
+                        </label>
+                        <label class="block">
+                            <span class="mb-2 block text-sm font-medium text-[#cfcfcf]">Season</span>
+                            <input
+                                id="home-season-filter"
+                                type="number"
+                                min="1992"
+                                max="2100"
+                                step="1"
+                                class="w-32 rounded-[6px] border border-[#2a2a2a] bg-[#0d0d0d] px-4 py-3 text-base text-[#e8e8e8] outline-0 focus:border-[#666]"
+                            />
+                        </label>
+                        <button
+                            id="home-refresh-events-btn"
+                            type="button"
+                            class="inline-flex min-h-12 items-center justify-center gap-2 rounded-[6px] border border-[#444] bg-[#e8e8e8] px-4 py-3 text-sm font-semibold text-[#101010] transition-colors hover:bg-white"
                         >
-                            <i class="fas fa-clipboard-list"></i>
-                        </span>
-                        <span>
-                            <span class="block text-2xl font-semibold">
-                                Match Scout
-                            </span>
-                            <span class="mt-2 block text-sm text-[#999]">
-                                Record team performance during a match.
-                            </span>
-                        </span>
-                    </button>
+                            <i class="fas fa-rotate-right" aria-hidden="true"></i>
+                            Load
+                        </button>
+                    </section>
 
-                    <button
-                        id="home-open-pit-scout-btn"
-                        class="flex min-h-44 flex-col items-start justify-between rounded-[8px] border border-[#2a2a2a] bg-[#141414] p-6 text-left transition-colors hover:border-[#555] hover:bg-[#1b1b1b]"
-                    >
-                        <span
-                            class="flex h-11 w-11 items-center justify-center rounded-[6px] bg-[#202020] text-[#e8e8e8]"
-                            aria-hidden="true"
-                        >
-                            <i class="fas fa-wrench"></i>
-                        </span>
-                        <span>
-                            <span class="block text-2xl font-semibold">
-                                Pit Scout
-                            </span>
-                            <span class="mt-2 block text-sm text-[#999]">
-                                Capture robot details by team.
-                            </span>
-                        </span>
-                    </button>
+                    <section class="flex flex-wrap items-center justify-between gap-3">
+                        <p id="home-event-results-count" class="text-sm text-[#aaa]" aria-live="polite">
+                            Loading official events...
+                        </p>
+                        <p id="home-last-event" class="text-sm text-[#777]"></p>
+                    </section>
 
-                    <button
-                        id="home-open-teams-btn"
-                        class="flex min-h-44 flex-col items-start justify-between rounded-[8px] border border-[#2a2a2a] bg-[#141414] p-6 text-left transition-colors hover:border-[#555] hover:bg-[#1b1b1b]"
-                    >
-                        <span
-                            class="flex h-11 w-11 items-center justify-center rounded-[6px] bg-[#202020] text-[#e8e8e8]"
-                            aria-hidden="true"
-                        >
-                            <i class="fas fa-users"></i>
-                        </span>
-                        <span>
-                            <span class="block text-2xl font-semibold">
-                                Teams
-                            </span>
-                            <span class="mt-2 block text-sm text-[#999]">
-                                Review all scouted teams.
-                            </span>
-                        </span>
-                    </button>
+                    <section
+                        id="home-event-feedback"
+                        class="hidden rounded-[8px] border border-[#2a2a2a] bg-[#141414] p-5 text-sm text-[#cfcfcf]"
+                        role="status"
+                        aria-live="polite"
+                    ></section>
 
-                    <button
-                        id="home-open-strategy-board-btn"
-                        class="flex min-h-44 flex-col items-start justify-between rounded-[8px] border border-[#2a2a2a] bg-[#141414] p-6 text-left transition-colors hover:border-[#555] hover:bg-[#1b1b1b]"
-                    >
-                        <span
-                            class="flex h-11 w-11 items-center justify-center rounded-[6px] bg-[#202020] text-[#e8e8e8]"
-                            aria-hidden="true"
-                        >
-                            <i class="fas fa-chalkboard"></i>
-                        </span>
-                        <span>
-                            <span class="block text-2xl font-semibold">
-                                Strategy Board
-                            </span>
-                            <span class="mt-2 block text-sm text-[#999]">
-                                Open the existing match planning board.
-                            </span>
-                        </span>
-                    </button>
+                    <section
+                        id="home-event-list"
+                        class="grid gap-3 pb-6 md:grid-cols-2 xl:grid-cols-3"
+                        aria-label="Official FIRST events"
+                    ></section>
                 </main>
 
                 <p
