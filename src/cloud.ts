@@ -19,12 +19,12 @@ type CloudScoutEntry = (MatchScoutEntry | PitScoutEntry) & {
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
-  authDomain: "strategyboard-app.firebaseapp.com",
-  projectId: "strategyboard-app",
-  storageBucket: "strategyboard-app.firebasestorage.app",
-  messagingSenderId: "297403143958",
-  appId: "1:297403143958:web:c140044272f5e73dca6237",
-  measurementId: "G-EMLW1J5N8X",
+  authDomain: "strategy-hub-fa705.firebaseapp.com",
+  projectId: "strategy-hub-fa705",
+  storageBucket: "strategy-hub-fa705.firebasestorage.app",
+  messagingSenderId: "1089355007546",
+  appId: "1:1089355007546:web:3038744a94479d3e7c9703",
+  measurementId: "G-W07734K8CX"
 };
 
 let db: Firestore | null = null;
