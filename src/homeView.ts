@@ -45,7 +45,7 @@ export class HomeView {
       options.strategyBoardElementId ?? "home-container";
 
     const savedEvent = loadSelectedFIRSTEvent();
-    this.setActiveEvent(savedEvent?.eventCode ?? options.activeEventKey);
+    this.setActiveEvent(savedEvent?.code ?? options.activeEventKey);
     this.updateLastEvent(savedEvent);
     this.updateConnectionStatus();
     this.bindEvents();
@@ -92,6 +92,10 @@ export class HomeView {
     getElement<HTMLInputElement>("home-event-search")?.addEventListener(
       "input",
       () => this.renderEvents(),
+    );
+    getElement<HTMLButtonElement>("home-change-event-btn")?.addEventListener(
+      "click",
+      () => this.clearSelectedEvent(),
     );
     getElement<HTMLInputElement>("home-season-filter")?.addEventListener(
       "change",
@@ -216,7 +220,7 @@ export class HomeView {
         event.city,
         event.stateprov,
         event.country,
-        event.eventCode,
+        event.code,
       ]
         .filter(Boolean)
         .join(" ")
@@ -249,6 +253,13 @@ export class HomeView {
     );
   }
 
+  private clearSelectedEvent(): void {
+    localStorage.removeItem("strategyhub:selectedFirstEvent");
+    this.setActiveEvent(undefined);
+    this.updateLastEvent(undefined);
+    this.showHome();
+  }
+
   private createEventCard(event: FIRSTEvent): HTMLButtonElement {
     const card = document.createElement("button");
     const isPast = this.isPastEvent(event);
@@ -256,7 +267,7 @@ export class HomeView {
     card.type = "button";
     card.className =
       "flex min-h-48 flex-col items-start gap-4 rounded-[8px] border border-[#2a2a2a] bg-[#141414] p-5 text-left transition-colors hover:border-[#666] hover:bg-[#1b1b1b]";
-    card.dataset.eventCode = event.eventCode;
+    card.dataset.eventCode = event.code;
     card.setAttribute(
       "aria-label",
       `Select ${event.name} for scouting`,
@@ -269,8 +280,9 @@ export class HomeView {
     card.innerHTML = `
       <div class="flex w-full items-start justify-between gap-3">
         <div>
-          <p class="text-xs uppercase tracking-wide text-[#888]">${this.escape(event.eventCode)}</p>
-          <h2 class="mt-1 text-lg font-semibold leading-tight text-[#f2f2f2]">${this.escape(event.name)}</h2>
+          <h2 class="text-lg font-semibold leading-tight text-[#f2f2f2]">
+            <span class="text-[#888] font-normal">[${this.escape(event.code)}]</span> ${this.escape(event.name)}
+          </h2>
         </div>
         ${statusBadge}
       </div>
@@ -296,12 +308,12 @@ export class HomeView {
 
   private selectEvent(event: FIRSTEvent): void {
     const selectedEvent = saveSelectedFIRSTEvent(event, this.selectedSeason);
-    const scoutingEventKey = `${this.selectedSeason}${event.eventCode}`.toLowerCase();
+    const scoutingEventKey = `${this.selectedSeason}${event.code}`.toLowerCase();
 
-    this.setActiveEvent(event.eventCode);
+    this.setActiveEvent(event.code);
     this.updateLastEvent(selectedEvent);
     this.prefillScoutingEvent(scoutingEventKey);
-    this.openModuleScreen("match-scout-screen", "match-scout");
+    this.showHome();
   }
 
   private prefillScoutingEvent(eventKey: string): void {
@@ -423,6 +435,29 @@ export class HomeView {
   }
 
   private hideModuleScreens(): void {
+    const hasEvent = !!loadSelectedFIRSTEvent();
+    const searchSection = getElement<HTMLElement>("home-event-search")?.closest("section");
+    const listSection = getElement<HTMLElement>("home-event-list");
+    const dashboardSection = getElement<HTMLElement>("home-dashboard");
+    const changeEventBtn = getElement<HTMLElement>("home-change-event-btn");
+    const resultsCount = getElement<HTMLElement>("home-event-results-count");
+
+    if (dashboardSection) {
+      dashboardSection.classList.toggle("hidden", !hasEvent);
+    }
+    if (searchSection) {
+      searchSection.classList.toggle("hidden", hasEvent);
+    }
+    if (listSection) {
+      listSection.classList.toggle("hidden", hasEvent);
+    }
+    if (resultsCount) {
+      resultsCount.classList.toggle("hidden", hasEvent);
+    }
+    if (changeEventBtn) {
+      changeEventBtn.classList.toggle("hidden", !hasEvent);
+    }
+
     for (const id of moduleScreenIds) {
       const screen = getElement<HTMLElement>(id);
       screen?.classList.add("hidden");

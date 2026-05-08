@@ -385,7 +385,16 @@
                         <p id="home-event-results-count" class="text-sm text-[#aaa]" aria-live="polite">
                             Loading official events...
                         </p>
-                        <p id="home-last-event" class="text-sm text-[#777]"></p>
+                        <div class="flex items-center gap-3">
+                            <p id="home-last-event" class="text-sm text-[#777]"></p>
+                            <button
+                                id="home-change-event-btn"
+                                type="button"
+                                class="hidden text-xs font-medium uppercase tracking-wider text-[#60a5fa] hover:underline"
+                            >
+                                Change Event
+                            </button>
+                        </div>
                     </section>
 
                     <section
@@ -400,6 +409,64 @@
                         class="grid gap-3 pb-6 md:grid-cols-2 xl:grid-cols-3"
                         aria-label="Official FIRST events"
                     ></section>
+
+                    <!-- Dashboard Section -->
+                    <section
+                        id="home-dashboard"
+                        class="hidden grid gap-4 pb-12 sm:grid-cols-2 lg:grid-cols-4"
+                    >
+                        <button
+                            id="home-open-strategy-board-btn"
+                            class="group flex min-h-[160px] flex-col items-center justify-center gap-4 rounded-[12px] border border-[#2a2a2a] bg-[#1a1a1a] p-6 text-center transition-all hover:scale-[1.02] hover:border-[#444] hover:bg-[#222]"
+                        >
+                            <div class="flex h-16 w-16 items-center justify-center rounded-full bg-[#1e293b] text-[#60a5fa] transition-colors group-hover:bg-[#2e3e56]">
+                                <i class="fas fa-chalkboard text-2xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-[#f2f2f2]">Strategy Board</h3>
+                                <p class="mt-1 text-xs text-[#999]">Whiteboard and planning</p>
+                            </div>
+                        </button>
+
+                        <button
+                            id="home-open-scouting-btn"
+                            class="group flex min-h-[160px] flex-col items-center justify-center gap-4 rounded-[12px] border border-[#2a2a2a] bg-[#1a1a1a] p-6 text-center transition-all hover:scale-[1.02] hover:border-[#444] hover:bg-[#222]"
+                        >
+                            <div class="flex h-16 w-16 items-center justify-center rounded-full bg-[#3b1e1e] text-[#f87171] transition-colors group-hover:bg-[#562e2e]">
+                                <i class="fas fa-clipboard-list text-2xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-[#f2f2f2]">Match Scout</h3>
+                                <p class="mt-1 text-xs text-[#999]">Record match data</p>
+                            </div>
+                        </button>
+
+                        <button
+                            id="home-open-pit-scout-btn"
+                            class="group flex min-h-[160px] flex-col items-center justify-center gap-4 rounded-[12px] border border-[#2a2a2a] bg-[#1a1a1a] p-6 text-center transition-all hover:scale-[1.02] hover:border-[#444] hover:bg-[#222]"
+                        >
+                            <div class="flex h-16 w-16 items-center justify-center rounded-full bg-[#1e3b29] text-[#4ade80] transition-colors group-hover:bg-[#2e563b]">
+                                <i class="fas fa-tools text-2xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-[#f2f2f2]">Pit Scout</h3>
+                                <p class="mt-1 text-xs text-[#999]">Robot technical data</p>
+                            </div>
+                        </button>
+
+                        <button
+                            id="home-open-teams-btn"
+                            class="group flex min-h-[160px] flex-col items-center justify-center gap-4 rounded-[12px] border border-[#2a2a2a] bg-[#1a1a1a] p-6 text-center transition-all hover:scale-[1.02] hover:border-[#444] hover:bg-[#222]"
+                        >
+                            <div class="flex h-16 w-16 items-center justify-center rounded-full bg-[#3b321e] text-[#fbbf24] transition-colors group-hover:bg-[#564a2e]">
+                                <i class="fas fa-users text-2xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-bold text-[#f2f2f2]">Teams</h3>
+                                <p class="mt-1 text-xs text-[#999]">Analysis and records</p>
+                            </div>
+                        </button>
+                    </section>
                 </main>
 
                 <p

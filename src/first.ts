@@ -3,7 +3,7 @@ import { Config } from "./config.ts";
 const FIRST_API_BASE = "https://frc-api.firstinspires.org/v3.0";
 
 export type FIRSTEvent = {
-  eventCode: string;
+  code: string;
   name: string;
   eventType: string;
   districtCode?: string | null;
@@ -51,7 +51,7 @@ export class FIRSTService {
       );
     }
 
-    const response = await fetch(`${FIRST_API_BASE}/${season}/events`, {
+    const response = await fetch(`${FIRST_API_BASE}/${season}/events?eventCode=&teamNumber=&districtCode=&excludeDistrict=&weekNumber&tournamentType`, {
       headers: {
         Authorization: `Basic ${btoa(`${username}:${token}`)}`,
         Accept: "application/json",
