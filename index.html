@@ -809,14 +809,17 @@
                 <form id="pit-scout-form" class="flex flex-1 flex-col gap-4 pb-6">
                     <div class="grid gap-3 sm:grid-cols-3">
                         <label class="block">
-                            <span class="mb-2 block text-sm font-medium text-[#cfcfcf]">Event</span>
+                            <span class="mb-2 block text-sm font-medium text-[#cfcfcf]">Event (locked)</span>
                             <input
                                 id="pit-scout-event"
                                 name="eventKey"
                                 type="text"
+                                readonly
+                                aria-readonly="true"
                                 autocomplete="off"
-                                placeholder="2026miket"
-                                class="w-full rounded-[6px] border border-[#2a2a2a] bg-[#141414] px-4 py-3 text-base text-[#e8e8e8] outline-0 focus:border-[#666]"
+                                placeholder="MIKET"
+                                title="Event is set from your home screen selection"
+                                class="w-full cursor-not-allowed rounded-[6px] border border-[#2a2a2a] bg-[#101010] px-4 py-3 text-base text-[#b0b0b0] outline-0"
                             />
                         </label>
                         <label class="block">
@@ -832,6 +835,12 @@
                                 autocomplete="off"
                                 class="w-full rounded-[6px] border border-[#2a2a2a] bg-[#141414] px-4 py-3 text-base text-[#e8e8e8] outline-0 [appearance:textfield] focus:border-[#666] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
+                            <p
+                                id="pit-scout-team-feedback"
+                                class="mt-1.5 hidden text-sm leading-snug text-red-400"
+                                role="alert"
+                                aria-live="polite"
+                            ></p>
                         </label>
                         <label class="block">
                             <span class="mb-2 block text-sm font-medium text-[#cfcfcf]">Weight</span>
@@ -842,6 +851,48 @@
                                 min="0"
                                 inputmode="decimal"
                                 class="w-full rounded-[6px] border border-[#2a2a2a] bg-[#141414] px-4 py-3 text-base text-[#e8e8e8] outline-0 focus:border-[#666]"
+                            />
+                        </label>
+                    </div>
+                    <div class="grid gap-3 sm:grid-cols-3">
+                        <label class="block">
+                            <span class="mb-2 block text-sm font-medium text-[#cfcfcf]">Team name</span>
+                            <input
+                                id="pit-scout-team-nickname"
+                                name="teamNicknameDisplay"
+                                type="text"
+                                readonly
+                                aria-readonly="true"
+                                tabindex="-1"
+                                autocomplete="off"
+                                placeholder="From FIRST roster"
+                                class="w-full cursor-default rounded-[6px] border border-[#2a2a2a] bg-[#101010] px-4 py-3 text-base text-[#b0b0b0] outline-0"
+                            />
+                        </label>
+                        <label class="block">
+                            <span class="mb-2 block text-sm font-medium text-[#cfcfcf]">Location</span>
+                            <input
+                                id="pit-scout-team-location"
+                                name="teamLocationDisplay"
+                                type="text"
+                                readonly
+                                aria-readonly="true"
+                                tabindex="-1"
+                                autocomplete="off"
+                                class="w-full cursor-default rounded-[6px] border border-[#2a2a2a] bg-[#101010] px-4 py-3 text-base text-[#b0b0b0] outline-0"
+                            />
+                        </label>
+                        <label class="block">
+                            <span class="mb-2 block text-sm font-medium text-[#cfcfcf]">School / organization</span>
+                            <input
+                                id="pit-scout-team-school"
+                                name="teamSchoolDisplay"
+                                type="text"
+                                readonly
+                                aria-readonly="true"
+                                tabindex="-1"
+                                autocomplete="off"
+                                class="w-full cursor-default rounded-[6px] border border-[#2a2a2a] bg-[#101010] px-4 py-3 text-base text-[#b0b0b0] outline-0"
                             />
                         </label>
                     </div>

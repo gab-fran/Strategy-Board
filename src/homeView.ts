@@ -255,6 +255,8 @@ export class HomeView {
 
   private clearSelectedEvent(): void {
     localStorage.removeItem("strategyhub:selectedFirstEvent");
+    (globalThis as any).strategyHubSelectedFirstEvent = undefined;
+    window.dispatchEvent(new Event("first:event-cleared"));
     this.setActiveEvent(undefined);
     this.updateLastEvent(undefined);
     this.showHome();
@@ -312,16 +314,21 @@ export class HomeView {
 
     this.setActiveEvent(event.code);
     this.updateLastEvent(selectedEvent);
-    this.prefillScoutingEvent(scoutingEventKey);
+    this.prefillScoutingEvent(scoutingEventKey, event.code);
     this.showHome();
   }
 
-  private prefillScoutingEvent(eventKey: string): void {
-    for (const id of ["match-scout-event", "pit-scout-event"]) {
-      const input = getElement<HTMLInputElement>(id);
-      if (input) {
-        input.value = eventKey;
-      }
+  private prefillScoutingEvent(
+    fullEventKey: string,
+    pitEventCodeDisplay: string,
+  ): void {
+    const matchInput = getElement<HTMLInputElement>("match-scout-event");
+    if (matchInput) {
+      matchInput.value = fullEventKey;
+    }
+    const pitInput = getElement<HTMLInputElement>("pit-scout-event");
+    if (pitInput) {
+      pitInput.value = pitEventCodeDisplay.trim().toUpperCase();
     }
   }
 

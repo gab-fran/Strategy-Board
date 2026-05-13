@@ -1,4 +1,11 @@
 import { loadProfile } from "./auth.ts";
+import {
+  FIRSTService,
+  buildScoutingEventKeyFromSelection,
+  getTeamDisplayFields,
+  loadSelectedFIRSTEvent,
+  type FIRSTTeam,
+} from "./first.ts";
 import type { MatchScoutEntry, PitScoutEntry } from "./models/scoutModels.ts";
 import { can } from "./permissions.ts";
 import {
@@ -6,6 +13,14 @@ import {
   saveMatchScout,
   savePitScout,
 } from "./services/scoutService.ts";
+
+const PIT_TEAM_DEBOUNCE_MS = 450;
+
+/** Set when the current event+team pair has passed FIRST roster validation (or loaded from storage). */
+let pitScoutLastValidatedTag: string | null = null;
+
+const pitScoutValidatedTag = (eventKey: string, teamNumber: string): string =>
+  `${eventKey.trim()}|${teamNumber.trim()}`;
 
 const getElement = <T extends HTMLElement>(id: string): T | null =>
   document.getElementById(id) as T | null;
@@ -89,6 +104,36 @@ const setPitStatus = (
   status.classList.toggle("hidden", !message);
 };
 
+const clearPitTeamFieldError = (): void => {
+  const input = getElement<HTMLInputElement>("pit-scout-team");
+  const feedback = getElement<HTMLElement>("pit-scout-team-feedback");
+  if (input) {
+    input.removeAttribute("aria-invalid");
+    input.style.borderColor = "";
+    input.style.backgroundColor = "";
+    input.style.boxShadow = "";
+  }
+  if (feedback) {
+    feedback.textContent = "";
+    feedback.classList.add("hidden");
+  }
+};
+
+/** Red border + message under the team field. */
+const setPitTeamFieldError = (message: string): void => {
+  const input = getElement<HTMLInputElement>("pit-scout-team");
+  const feedback = getElement<HTMLElement>("pit-scout-team-feedback");
+  if (!input || !feedback) {
+    return;
+  }
+  input.setAttribute("aria-invalid", "true");
+  input.style.borderColor = "#dc2626";
+  input.style.backgroundColor = "rgba(127, 29, 29, 0.22)";
+  input.style.boxShadow = "0 0 0 1px #dc2626";
+  feedback.textContent = message;
+  feedback.classList.remove("hidden");
+};
+
 const setButtonVisible = (id: string, visible: boolean): void => {
   const button = getElement<HTMLButtonElement>(id);
 
@@ -106,8 +151,34 @@ const resetMatchScoutForm = (): void => {
   getElement<HTMLInputElement>("match-scout-event")?.focus();
 };
 
-const resetPitScoutForm = (): void => {
+const clearPitFirstDisplay = (): void => {
+  setValue("pit-scout-team-nickname", "");
+  setValue("pit-scout-team-location", "");
+  setValue("pit-scout-team-school", "");
+};
+
+const applyTeamDisplayFromFirst = (team: FIRSTTeam): void => {
+  const d = getTeamDisplayFields(team);
+  setValue("pit-scout-team-nickname", d.nickname);
+  setValue("pit-scout-team-location", d.location);
+  setValue("pit-scout-team-school", d.school);
+};
+
+/** Clears saved pit fields only (not event lock or FIRST display row). */
+const clearPitScoutSavedFieldsOnly = (): void => {
+  setValue("pit-scout-drivetrain", "");
+  setValue("pit-scout-auto-capabilities", "");
+  setValue("pit-scout-climb-capabilities", "");
+  setValue("pit-scout-weight", "");
+  setValue("pit-scout-technical-notes", "");
+};
+
+const resetPitScoutForm = (reapplyLockedEvent: () => void): void => {
   getRequiredElement<HTMLFormElement>("pit-scout-form").reset();
+  pitScoutLastValidatedTag = null;
+  clearPitFirstDisplay();
+  clearPitTeamFieldError();
+  reapplyLockedEvent();
   setPitStatus("", "idle");
   getElement<HTMLInputElement>("pit-scout-team")?.focus();
 };
@@ -196,22 +267,12 @@ const createMatchScoutEntry = async (): Promise<MatchScoutEntry | undefined> => 
 };
 
 const fillPitScoutForm = (entry: PitScoutEntry): void => {
-  setValue("pit-scout-event", entry.eventKey);
   setValue("pit-scout-team", entry.teamNumber);
   setValue("pit-scout-drivetrain", entry.drivetrain);
   setValue("pit-scout-auto-capabilities", entry.autoCapabilities);
   setValue("pit-scout-climb-capabilities", entry.climbCapabilities);
   setValue("pit-scout-weight", entry.weight);
   setValue("pit-scout-technical-notes", entry.technicalNotes);
-};
-
-const clearPitScoutDetails = (): void => {
-  setValue("pit-scout-event", "");
-  setValue("pit-scout-drivetrain", "");
-  setValue("pit-scout-auto-capabilities", "");
-  setValue("pit-scout-climb-capabilities", "");
-  setValue("pit-scout-weight", "");
-  setValue("pit-scout-technical-notes", "");
 };
 
 const createPitScoutEntry = async (
@@ -238,10 +299,31 @@ const createPitScoutEntry = async (
     return undefined;
   }
 
+  const selected = loadSelectedFIRSTEvent();
+  if (!selected) {
+    setPitStatus(
+      "Select an event on the home screen before pit scouting.",
+      "error",
+    );
+    return undefined;
+  }
+
+  const eventKey = buildScoutingEventKeyFromSelection(selected);
   const teamNumber = readText("pit-scout-team");
 
   if (!teamNumber) {
     setPitStatus("Fill in the team number before saving.", "error");
+    return undefined;
+  }
+
+  if (
+    !pitScoutLastValidatedTag ||
+    pitScoutLastValidatedTag !== pitScoutValidatedTag(eventKey, teamNumber)
+  ) {
+    setPitStatus(
+      "Verify the team number against the official event roster before saving.",
+      "error",
+    );
     return undefined;
   }
 
@@ -251,7 +333,7 @@ const createPitScoutEntry = async (
   return {
     id: existingEntry?.id ?? createId(),
     teamNumber,
-    eventKey: readText("pit-scout-event"),
+    eventKey,
     createdByTeam: existingEntry?.createdByTeam ?? profile.teamNumber,
     createdByName: existingEntry?.createdByName ?? profile.userName,
     createdAt: existingEntry?.createdAt ?? now,
@@ -315,8 +397,10 @@ export function initPitScout(): void {
     return;
   }
 
+  const firstService = new FIRSTService();
   let loadedEntry: PitScoutEntry | undefined;
-  let loadCounter = 0;
+  let activeValidationId = 0;
+  let debTimer: ReturnType<typeof setTimeout> | undefined;
 
   const applyPitScoutPermissions = async (): Promise<void> => {
     const profile = await loadProfile();
@@ -329,43 +413,217 @@ export function initPitScout(): void {
     setButtonVisible("pit-scout-save-btn", canCreateScout && canEditLoadedEntry);
   };
 
-  void applyPitScoutPermissions();
+  const applyPitLockedEvent = (): void => {
+    const eventInput = getElement<HTMLInputElement>("pit-scout-event");
+    const teamField = getElement<HTMLInputElement>("pit-scout-team");
+    if (!eventInput) {
+      return;
+    }
 
-  const teamInput = getElement<HTMLInputElement>("pit-scout-team");
+    const selected = loadSelectedFIRSTEvent();
+    if (!selected) {
+      eventInput.value = "";
+      pitScoutLastValidatedTag = null;
+      if (teamField) {
+        teamField.disabled = true;
+      }
+      clearPitTeamFieldError();
+      setPitStatus(
+        "Select an event on the home screen before pit scouting.",
+        "error",
+      );
+      return;
+    }
 
-  teamInput?.addEventListener("input", async () => {
-    const teamNumber = teamInput.value.trim();
-    const requestId = ++loadCounter;
-    loadedEntry = undefined;
+    eventInput.value = selected.code.trim().toUpperCase();
+    if (teamField) {
+      teamField.disabled = false;
+    }
+    clearPitTeamFieldError();
 
-    if (!teamNumber) {
+    const status = getElement<HTMLElement>("pit-scout-status");
+    if (
+      status?.textContent ===
+      "Select an event on the home screen before pit scouting."
+    ) {
+      setPitStatus("", "idle");
+    }
+  };
+
+  const invalidatePendingValidation = (): void => {
+    activeValidationId++;
+    clearTimeout(debTimer);
+  };
+
+  const isCompleteTeamNumber = (raw: string): boolean =>
+    /^\d{1,5}$/.test(raw) && raw !== "0";
+
+  const runPitTeamValidation = async (
+    requestId: number,
+    teamNumber: string,
+  ): Promise<void> => {
+    const selected = loadSelectedFIRSTEvent();
+
+    if (!selected) {
+      if (requestId !== activeValidationId) {
+        return;
+      }
+      setPitStatus(
+        "Select an event on the home screen before pit scouting.",
+        "error",
+      );
+      return;
+    }
+
+    const eventKey = buildScoutingEventKeyFromSelection(selected);
+
+    if (!firstService.hasCredentials()) {
+      if (requestId !== activeValidationId) {
+        return;
+      }
+      setPitStatus(
+        "Configure VITE_FIRST_API_USERNAME and VITE_FIRST_API_AUTH_TOKEN to verify teams against the official FIRST API.",
+        "error",
+      );
+      return;
+    }
+
+    if (!isCompleteTeamNumber(teamNumber)) {
+      if (requestId !== activeValidationId) {
+        return;
+      }
+      pitScoutLastValidatedTag = null;
+      clearPitFirstDisplay();
+      clearPitTeamFieldError();
+      loadedEntry = undefined;
       setPitStatus("", "idle");
       void applyPitScoutPermissions();
       return;
     }
 
-    const entry = await getPitScoutByTeam(teamNumber);
+    try {
+      setPitStatus("Checking team on FIRST roster...", "idle");
+      clearPitTeamFieldError();
 
-    if (requestId !== loadCounter) {
+      const globalTeam = await firstService.getTeamBySeasonAndNumber(
+        selected.season,
+        teamNumber,
+      );
+
+      if (requestId !== activeValidationId) {
+        return;
+      }
+
+      if (!globalTeam) {
+        setPitTeamFieldError("Invalid team.");
+        clearPitFirstDisplay();
+        clearPitScoutSavedFieldsOnly();
+        pitScoutLastValidatedTag = null;
+        loadedEntry = undefined;
+        setPitStatus("", "idle");
+        void applyPitScoutPermissions();
+        return;
+      }
+
+      const eventTeam = await firstService.getTeamAtEvent(
+        selected.season,
+        selected.code,
+        teamNumber,
+      );
+
+      if (requestId !== activeValidationId) {
+        return;
+      }
+
+      if (!eventTeam) {
+        setPitTeamFieldError(
+          "This team is not registered for this event.",
+        );
+        clearPitFirstDisplay();
+        clearPitScoutSavedFieldsOnly();
+        pitScoutLastValidatedTag = null;
+        loadedEntry = undefined;
+        setPitStatus("", "idle");
+        void applyPitScoutPermissions();
+        return;
+      }
+
+      clearPitTeamFieldError();
+      applyTeamDisplayFromFirst(eventTeam);
+
+      const entry = await getPitScoutByTeam(teamNumber);
+
+      if (requestId !== activeValidationId) {
+        return;
+      }
+
+      loadedEntry = entry;
+
+      if (entry) {
+        fillPitScoutForm(entry);
+        setPitStatus("Loaded existing pit scout for this team.", "idle");
+      } else {
+        clearPitScoutSavedFieldsOnly();
+        setPitStatus("No pit scout saved for this team yet.", "idle");
+      }
+
+      pitScoutLastValidatedTag = pitScoutValidatedTag(eventKey, teamNumber);
+      void applyPitScoutPermissions();
+    } catch (error) {
+      console.error("FIRST pit team validation failed:", error);
+      if (requestId !== activeValidationId) {
+        return;
+      }
+      pitScoutLastValidatedTag = null;
+      clearPitFirstDisplay();
+      clearPitTeamFieldError();
+      setPitStatus(
+        "Could not verify this team with the FIRST API. Check credentials and your connection.",
+        "error",
+      );
+      void applyPitScoutPermissions();
+    }
+  };
+
+  const scheduleTeamValidation = (): void => {
+    clearTimeout(debTimer);
+    debTimer = setTimeout(() => {
+      const requestId = ++activeValidationId;
+      const currentTeam = teamInput?.value.trim() ?? "";
+      void runPitTeamValidation(requestId, currentTeam);
+    }, PIT_TEAM_DEBOUNCE_MS);
+  };
+
+  applyPitLockedEvent();
+  window.addEventListener("first:event-selected", applyPitLockedEvent);
+  window.addEventListener("first:event-cleared", applyPitLockedEvent);
+
+  void applyPitScoutPermissions();
+
+  const teamInput = getElement<HTMLInputElement>("pit-scout-team");
+
+  teamInput?.addEventListener("input", () => {
+    const teamNumber = teamInput.value.trim();
+
+    if (!teamNumber) {
+      invalidatePendingValidation();
+      clearPitFirstDisplay();
+      clearPitTeamFieldError();
+      pitScoutLastValidatedTag = null;
+      loadedEntry = undefined;
+      setPitStatus("", "idle");
+      void applyPitScoutPermissions();
       return;
     }
 
-    loadedEntry = entry;
-
-    if (entry) {
-      fillPitScoutForm(entry);
-      setPitStatus("Loaded existing pit scout for this team.", "idle");
-    } else {
-      clearPitScoutDetails();
-      setPitStatus("No pit scout saved for this team yet.", "idle");
-    }
-
-    void applyPitScoutPermissions();
+    clearPitTeamFieldError();
+    scheduleTeamValidation();
   });
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     setPitStatus("Saving pit scout...", "idle");
+    clearPitTeamFieldError();
 
     try {
       const entry = await createPitScoutEntry(loadedEntry);
@@ -395,7 +653,7 @@ export function initPitScout(): void {
     "click",
     () => {
       loadedEntry = undefined;
-      resetPitScoutForm();
+      resetPitScoutForm(applyPitLockedEvent);
       void applyPitScoutPermissions();
     },
   );
