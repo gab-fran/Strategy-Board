@@ -36,7 +36,7 @@ export interface MatchScoutEntry {
   notes: string;
 }
 
-export interface PitScoutEntry {
+export interface RobotScoutEntry {
   id: string;
   teamNumber: string;
   eventKey: string;

@@ -1,9 +1,9 @@
 import { buildTeamSummaries, buildTeamSummary } from "./aggregate.ts";
-import type { MatchScoutEntry, PitScoutEntry } from "./models/scoutModels.ts";
+import type { MatchScoutEntry, RobotScoutEntry } from "./models/scoutModels.ts";
 import type { TeamSummary } from "./models/teamModels.ts";
 import {
   getAllMatchScouts,
-  getAllPitScouts,
+  getAllRobotScouts,
 } from "./services/scoutService.ts";
 
 const getElement = <T extends HTMLElement>(id: string): T | null =>
@@ -103,33 +103,33 @@ const renderMatchHistory = (matches: MatchScoutEntry[]): string => {
     .join("");
 };
 
-const renderPitScout = (pitScout: PitScoutEntry | undefined): string => {
-  if (!pitScout) {
-    return `<p class="rounded-[6px] border border-[#242424] bg-[#101010] p-4 text-sm text-[#999]">No pit scout recorded for this team.</p>`;
+const renderRobotScout = (robotScout: RobotScoutEntry | undefined): string => {
+  if (!robotScout) {
+    return `<p class="rounded-[6px] border border-[#242424] bg-[#101010] p-4 text-sm text-[#999]">No robot scout recorded for this team.</p>`;
   }
 
   return `
     <dl class="grid gap-3 lg:grid-cols-2">
       <div class="rounded-[6px] border border-[#242424] bg-[#101010] p-4">
         <dt class="text-xs uppercase text-[#888]">Drivetrain</dt>
-        <dd class="mt-2 text-sm leading-6 text-[#cfcfcf]">${escapeHtml(pitScout.drivetrain || "Not recorded")}</dd>
+        <dd class="mt-2 text-sm leading-6 text-[#cfcfcf]">${escapeHtml(robotScout.drivetrain || "Not recorded")}</dd>
       </div>
       <div class="rounded-[6px] border border-[#242424] bg-[#101010] p-4">
         <dt class="text-xs uppercase text-[#888]">Weight</dt>
-        <dd class="mt-2 text-sm leading-6 text-[#cfcfcf]">${pitScout.weight !== undefined ? `${formatNumber(pitScout.weight)} lb` : "Not recorded"}</dd>
+        <dd class="mt-2 text-sm leading-6 text-[#cfcfcf]">${robotScout.weight !== undefined ? `${formatNumber(robotScout.weight)} lb` : "Not recorded"}</dd>
       </div>
       <div class="rounded-[6px] border border-[#242424] bg-[#101010] p-4">
         <dt class="text-xs uppercase text-[#888]">Auto capability</dt>
-        <dd class="mt-2 text-sm leading-6 text-[#cfcfcf]">${escapeHtml(pitScout.autoCapabilities || "Not recorded")}</dd>
+        <dd class="mt-2 text-sm leading-6 text-[#cfcfcf]">${escapeHtml(robotScout.autoCapabilities || "Not recorded")}</dd>
       </div>
       <div class="rounded-[6px] border border-[#242424] bg-[#101010] p-4">
         <dt class="text-xs uppercase text-[#888]">Climb</dt>
-        <dd class="mt-2 text-sm leading-6 text-[#cfcfcf]">${escapeHtml(pitScout.climbCapabilities || "Not recorded")}</dd>
+        <dd class="mt-2 text-sm leading-6 text-[#cfcfcf]">${escapeHtml(robotScout.climbCapabilities || "Not recorded")}</dd>
       </div>
     </dl>
     ${
-      pitScout.technicalNotes
-        ? `<p class="mt-3 rounded-[6px] border border-[#242424] bg-[#101010] p-4 text-sm leading-6 text-[#b8b8b8]">${escapeHtml(pitScout.technicalNotes)}</p>`
+      robotScout.technicalNotes
+        ? `<p class="mt-3 rounded-[6px] border border-[#242424] bg-[#101010] p-4 text-sm leading-6 text-[#b8b8b8]">${escapeHtml(robotScout.technicalNotes)}</p>`
         : ""
     }
   `;
@@ -156,9 +156,9 @@ const renderSummary = (summary: TeamSummary): void => {
     );
   }
 
-  const pitScout = getElement<HTMLElement>("team-detail-pit-scout");
-  if (pitScout) {
-    pitScout.innerHTML = renderPitScout(summary.pitScout);
+  const robotScoutContainer = getElement<HTMLElement>("team-detail-robot-scout");
+  if (robotScoutContainer) {
+    robotScoutContainer.innerHTML = renderRobotScout(summary.robotScout);
   }
 };
 
@@ -198,14 +198,14 @@ export async function showTeamDetail(
   teamNumber: string | number,
   orderedTeamNumbers: string[] = [],
 ): Promise<void> {
-  const [matchScouts, pitScouts] = await Promise.all([
+  const [matchScouts, robotScouts] = await Promise.all([
     getAllMatchScouts(),
-    getAllPitScouts(),
+    getAllRobotScouts(),
   ]);
-  const summaries = buildTeamSummaries(matchScouts, pitScouts);
-  const summary = buildTeamSummary(teamNumber, matchScouts, pitScouts);
+  const summaries = buildTeamSummaries(matchScouts, robotScouts);
+  const summary = buildTeamSummary(teamNumber, matchScouts, robotScouts);
 
-  if (!summary.matchCount && !summary.hasPitScout) {
+  if (!summary.matchCount && !summary.hasRobotScout) {
     return;
   }
 
@@ -217,7 +217,7 @@ export async function showTeamDetail(
   hideScreen("home-screen");
   hideScreen("home-container");
   hideScreen("match-scout-screen");
-  hideScreen("pit-scout-screen");
+  hideScreen("robot-scout-screen");
   hideScreen("teams-screen");
   renderSummary(summary);
   updateNavButtons(summary.teamNumber, currentOrderedTeamNumbers);

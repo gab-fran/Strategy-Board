@@ -6,7 +6,7 @@ import { showTeamDetail } from "./teamDetailView.ts";
 import { downloadScoutsFromFirebase, processSyncQueue } from "./sync.ts";
 import {
   getAllMatchScouts,
-  getAllPitScouts,
+  getAllRobotScouts,
 } from "./services/scoutService.ts";
 
 const getElement = <T extends HTMLElement>(id: string): T | null =>
@@ -27,7 +27,7 @@ const escapeHtml = (value: string): string =>
     .replaceAll("'", "&#039;");
 
 const renderTeamCard = (summary: TeamSummary): string => {
-  const pitScout = summary.pitScout;
+  const robotScout = summary.robotScout;
   const alliances = [
     ...new Set(summary.matchScouts.map((scout) => scout.alliance).filter(Boolean)),
   ].join(", ");
@@ -47,7 +47,7 @@ const renderTeamCard = (summary: TeamSummary): string => {
           <p class="mt-1 text-sm text-[#999]">${escapeHtml(summary.eventKey ?? "No event")} ${alliances ? `- ${escapeHtml(alliances)}` : ""}</p>
         </div>
         <span class="rounded-[6px] border border-[#2a2a2a] bg-[#101010] px-3 py-2 text-sm text-[#cfcfcf]">
-          ${summary.hasPitScout ? "Pit scout" : "Match only"}
+          ${summary.hasRobotScout ? "Robot scout" : "Match only"}
         </span>
       </div>
 
@@ -77,15 +77,15 @@ const renderTeamCard = (summary: TeamSummary): string => {
       <div class="mt-4 grid gap-3 lg:grid-cols-3">
         <p class="rounded-[6px] border border-[#242424] bg-[#101010] p-3 text-sm text-[#cfcfcf]">
           <span class="block text-xs uppercase text-[#888]">Drivetrain</span>
-          ${escapeHtml(pitScout?.drivetrain || "Not recorded")}
+          ${escapeHtml(robotScout?.drivetrain || "Not recorded")}
         </p>
         <p class="rounded-[6px] border border-[#242424] bg-[#101010] p-3 text-sm text-[#cfcfcf]">
           <span class="block text-xs uppercase text-[#888]">Auto capability</span>
-          ${escapeHtml(pitScout?.autoCapabilities || "Not recorded")}
+          ${escapeHtml(robotScout?.autoCapabilities || "Not recorded")}
         </p>
         <p class="rounded-[6px] border border-[#242424] bg-[#101010] p-3 text-sm text-[#cfcfcf]">
           <span class="block text-xs uppercase text-[#888]">Climb</span>
-          ${escapeHtml(pitScout?.climbCapabilities || "Not recorded")}
+          ${escapeHtml(robotScout?.climbCapabilities || "Not recorded")}
         </p>
       </div>
 
@@ -176,12 +176,12 @@ export function initTeamsView(): void {
 
     syncButton?.classList.toggle("hidden", !can("sync", profile?.role));
 
-    const [matchScouts, pitScouts] = await Promise.all([
+    const [matchScouts, robotScouts] = await Promise.all([
       getAllMatchScouts(),
-      getAllPitScouts(),
+      getAllRobotScouts(),
     ]);
 
-    summaries = buildTeamSummaries(matchScouts, pitScouts);
+    summaries = buildTeamSummaries(matchScouts, robotScouts);
     render();
   };
 

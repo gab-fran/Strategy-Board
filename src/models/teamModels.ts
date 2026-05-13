@@ -1,10 +1,10 @@
-import type { MatchScoutEntry, PitScoutEntry } from "./scoutModels.ts";
+import type { MatchScoutEntry, RobotScoutEntry } from "./scoutModels.ts";
 
 export interface TeamSummary {
   teamNumber: string;
   eventKey?: string;
   matchCount: number;
-  hasPitScout: boolean;
+  hasRobotScout: boolean;
   averageAutoPoints: number;
   averageTeleopPoints: number;
   averageEndgamePoints: number;
@@ -12,5 +12,5 @@ export interface TeamSummary {
   consistency: number;
   notesSummary: string[];
   matchScouts: MatchScoutEntry[];
-  pitScout?: PitScoutEntry;
+  robotScout?: RobotScoutEntry;
 }

@@ -11,10 +11,10 @@ import {
   Firestore,
 } from "firebase/firestore";
 import { Match } from "./match";
-import type { MatchScoutEntry, PitScoutEntry } from "./models/scoutModels.ts";
+import type { MatchScoutEntry, RobotScoutEntry } from "./models/scoutModels.ts";
 
-type CloudScoutEntry = (MatchScoutEntry | PitScoutEntry) & {
-  scoutType: "match" | "pit";
+type CloudScoutEntry = (MatchScoutEntry | RobotScoutEntry) & {
+  scoutType: "match" | "pit" | "robot";
 };
 
 const firebaseConfig = {

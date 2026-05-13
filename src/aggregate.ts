@@ -1,4 +1,4 @@
-import type { MatchScoutEntry, PitScoutEntry } from "./models/scoutModels.ts";
+import type { MatchScoutEntry, RobotScoutEntry } from "./models/scoutModels.ts";
 import type { TeamSummary } from "./models/teamModels.ts";
 
 const normalizeTeamNumber = (teamNumber: string | number): string =>
@@ -76,22 +76,22 @@ export const calcConsistency = (entries: MatchScoutEntry[]): number => {
 export const buildTeamSummary = (
   teamNumber: string | number,
   matchScouts: MatchScoutEntry[] = [],
-  pitScouts: PitScoutEntry[] = [],
+  robotScouts: RobotScoutEntry[] = [],
 ): TeamSummary => {
   const normalizedTeamNumber = normalizeTeamNumber(teamNumber);
   const matches = matchScouts.filter(
     (entry) => normalizeTeamNumber(entry.teamNumber) === normalizedTeamNumber,
   );
-  const pitScout = pitScouts.find(
+  const robotScout = robotScouts.find(
     (entry) => normalizeTeamNumber(entry.teamNumber) === normalizedTeamNumber,
   );
 
   return {
     teamNumber: normalizedTeamNumber,
     eventKey:
-      pitScout?.eventKey || matches.find((match) => match.eventKey)?.eventKey,
+      robotScout?.eventKey || matches.find((match) => match.eventKey)?.eventKey,
     matchCount: matches.length,
-    hasPitScout: Boolean(pitScout),
+    hasRobotScout: Boolean(robotScout),
     averageAutoPoints: calcAvgAuto(matches),
     averageTeleopPoints: calcAvgTeleop(matches),
     averageEndgamePoints: calcAvgEndgame(matches),
@@ -99,16 +99,16 @@ export const buildTeamSummary = (
     consistency: calcConsistency(matches),
     notesSummary: [
       ...matches.map((match) => match.notes).filter(Boolean),
-      pitScout?.technicalNotes ?? "",
+      robotScout?.technicalNotes ?? "",
     ].filter(Boolean),
     matchScouts: matches,
-    pitScout,
+    robotScout,
   };
 };
 
 export const buildTeamSummaries = (
   matchScouts: MatchScoutEntry[],
-  pitScouts: PitScoutEntry[],
+  robotScouts: RobotScoutEntry[],
 ): TeamSummary[] => {
   const teamNumbers = new Set<string>();
 
@@ -116,13 +116,13 @@ export const buildTeamSummaries = (
     teamNumbers.add(normalizeTeamNumber(scout.teamNumber));
   }
 
-  for (const scout of pitScouts) {
+  for (const scout of robotScouts) {
     teamNumbers.add(normalizeTeamNumber(scout.teamNumber));
   }
 
   return sortTeamSummaries(
     [...teamNumbers].map((teamNumber) =>
-      buildTeamSummary(teamNumber, matchScouts, pitScouts),
+      buildTeamSummary(teamNumber, matchScouts, robotScouts),
     ),
   );
 };

@@ -17,7 +17,7 @@ const moduleScreenIds = [
   "home-screen",
   "home-container",
   "match-scout-screen",
-  "pit-scout-screen",
+  "robot-scout-screen",
   "teams-screen",
   "team-detail-screen",
   "whiteboard-container",
@@ -81,9 +81,9 @@ export class HomeView {
       "click",
       () => this.openModuleScreen("match-scout-screen", "match-scout"),
     );
-    getElement<HTMLButtonElement>("home-open-pit-scout-btn")?.addEventListener(
+    getElement<HTMLButtonElement>("home-open-robot-scout-btn")?.addEventListener(
       "click",
-      () => this.openModuleScreen("pit-scout-screen", "pit-scout"),
+      () => this.openModuleScreen("robot-scout-screen", "robot-scout"),
     );
     getElement<HTMLButtonElement>("home-open-teams-btn")?.addEventListener(
       "click",
@@ -134,7 +134,7 @@ export class HomeView {
       "hidden",
       !can("create-scout", profile?.role),
     );
-    getElement<HTMLButtonElement>("home-open-pit-scout-btn")?.classList.toggle(
+    getElement<HTMLButtonElement>("home-open-robot-scout-btn")?.classList.toggle(
       "hidden",
       !can("create-scout", profile?.role),
     );
@@ -323,9 +323,9 @@ export class HomeView {
     if (matchInput) {
       matchInput.value = display;
     }
-    const pitInput = getElement<HTMLInputElement>("pit-scout-event");
-    if (pitInput) {
-      pitInput.value = display;
+    const robotScoutEventInput = getElement<HTMLInputElement>("robot-scout-event");
+    if (robotScoutEventInput) {
+      robotScoutEventInput.value = display;
     }
   }
 
@@ -468,7 +468,7 @@ export class HomeView {
       if (
         id === "home-screen" ||
         id === "match-scout-screen" ||
-        id === "pit-scout-screen" ||
+        id === "robot-scout-screen" ||
         id === "teams-screen" ||
         id === "team-detail-screen"
       ) {

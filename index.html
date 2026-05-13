@@ -442,14 +442,14 @@
                         </button>
 
                         <button
-                            id="home-open-pit-scout-btn"
+                            id="home-open-robot-scout-btn"
                             class="group flex min-h-[160px] flex-col items-center justify-center gap-4 rounded-[12px] border border-[#2a2a2a] bg-[#1a1a1a] p-6 text-center transition-all hover:scale-[1.02] hover:border-[#444] hover:bg-[#222]"
                         >
                             <div class="flex h-16 w-16 items-center justify-center rounded-full bg-[#1e3b29] text-[#4ade80] transition-colors group-hover:bg-[#2e563b]">
                                 <i class="fas fa-tools text-2xl"></i>
                             </div>
                             <div>
-                                <h3 class="text-lg font-bold text-[#f2f2f2]">Pit Scout</h3>
+                                <h3 class="text-lg font-bold text-[#f2f2f2]">Robot Scout</h3>
                                 <p class="mt-1 text-xs text-[#999]">Robot technical data</p>
                             </div>
                         </button>
@@ -791,19 +791,19 @@
             </div>
         </section>
         <section
-            id="pit-scout-screen"
+            id="robot-scout-screen"
             class="hidden h-full w-full overflow-y-auto bg-[#0d0d0d] text-[#e8e8e8]"
             aria-hidden="true"
-            aria-labelledby="pit-scout-title"
+            aria-labelledby="robot-scout-title"
         >
             <div class="mx-auto flex min-h-full w-full max-w-5xl flex-col gap-5 px-4 py-4 sm:px-6 md:px-8">
                 <header class="flex flex-col gap-4 border-b border-[#1e1e1e] pb-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h1
-                            id="pit-scout-title"
+                            id="robot-scout-title"
                             class="text-2xl font-semibold sm:text-3xl"
                         >
-                            Pit Scout
+                            Robot Scout
                         </h1>
                         <p class="mt-1 text-sm text-[#999]">
                             Record robot details for a team.
@@ -811,7 +811,7 @@
                     </div>
                     <div class="flex flex-wrap gap-2">
                         <button
-                            id="pit-scout-back-btn"
+                            id="robot-scout-back-btn"
                             type="button"
                             class="btn-secondary flex min-h-11 items-center justify-center gap-2 px-4 text-sm"
                         >
@@ -819,7 +819,7 @@
                             <span>Back</span>
                         </button>
                         <button
-                            id="pit-scout-new-btn"
+                            id="robot-scout-new-btn"
                             type="button"
                             class="btn-secondary flex min-h-11 items-center justify-center gap-2 px-4 text-sm"
                         >
@@ -829,12 +829,12 @@
                     </div>
                 </header>
 
-                <form id="pit-scout-form" class="flex flex-1 flex-col gap-4 pb-6">
+                <form id="robot-scout-form" class="flex flex-1 flex-col gap-4 pb-6">
                     <div class="grid gap-3 sm:grid-cols-3">
                         <label class="block">
                             <span class="mb-2 block text-sm font-medium text-[#cfcfcf]">Event (locked)</span>
                             <input
-                                id="pit-scout-event"
+                                id="robot-scout-event"
                                 name="eventKey"
                                 type="text"
                                 readonly
@@ -848,7 +848,7 @@
                         <label class="block">
                             <span class="mb-2 block text-sm font-medium text-[#cfcfcf]">Team</span>
                             <input
-                                id="pit-scout-team"
+                                id="robot-scout-team"
                                 name="teamNumber"
                                 type="number"
                                 inputmode="numeric"
@@ -859,7 +859,7 @@
                                 class="w-full rounded-[6px] border border-[#2a2a2a] bg-[#141414] px-4 py-3 text-base text-[#e8e8e8] outline-0 [appearance:textfield] focus:border-[#666] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                             />
                             <p
-                                id="pit-scout-team-feedback"
+                                id="robot-scout-team-feedback"
                                 class="mt-1.5 hidden text-sm leading-snug text-red-400"
                                 role="alert"
                                 aria-live="polite"
@@ -868,7 +868,7 @@
                         <label class="block">
                             <span class="mb-2 block text-sm font-medium text-[#cfcfcf]">Weight</span>
                             <input
-                                id="pit-scout-weight"
+                                id="robot-scout-weight"
                                 name="weight"
                                 type="number"
                                 min="0"
@@ -881,7 +881,7 @@
                         <label class="block">
                             <span class="mb-2 block text-sm font-medium text-[#cfcfcf]">Team name</span>
                             <input
-                                id="pit-scout-team-nickname"
+                                id="robot-scout-team-nickname"
                                 name="teamNicknameDisplay"
                                 type="text"
                                 readonly
@@ -895,7 +895,7 @@
                         <label class="block">
                             <span class="mb-2 block text-sm font-medium text-[#cfcfcf]">Location</span>
                             <input
-                                id="pit-scout-team-location"
+                                id="robot-scout-team-location"
                                 name="teamLocationDisplay"
                                 type="text"
                                 readonly
@@ -908,7 +908,7 @@
                         <label class="block">
                             <span class="mb-2 block text-sm font-medium text-[#cfcfcf]">School / organization</span>
                             <input
-                                id="pit-scout-team-school"
+                                id="robot-scout-team-school"
                                 name="teamSchoolDisplay"
                                 type="text"
                                 readonly
@@ -924,7 +924,7 @@
                         <label class="block rounded-[8px] border border-[#2a2a2a] bg-[#111111] p-4">
                             <span class="mb-2 block text-base font-semibold text-[#e8e8e8]">Drivetrain</span>
                             <textarea
-                                id="pit-scout-drivetrain"
+                                id="robot-scout-drivetrain"
                                 name="drivetrain"
                                 rows="5"
                                 placeholder="Swerve, tank, mecanum, notes"
@@ -934,7 +934,7 @@
                         <label class="block rounded-[8px] border border-[#2a2a2a] bg-[#111111] p-4">
                             <span class="mb-2 block text-base font-semibold text-[#e8e8e8]">Auto Capabilities</span>
                             <textarea
-                                id="pit-scout-auto-capabilities"
+                                id="robot-scout-auto-capabilities"
                                 name="autoCapabilities"
                                 rows="5"
                                 placeholder="Starting positions, paths, scoring"
@@ -944,7 +944,7 @@
                         <label class="block rounded-[8px] border border-[#2a2a2a] bg-[#111111] p-4">
                             <span class="mb-2 block text-base font-semibold text-[#e8e8e8]">Climb</span>
                             <textarea
-                                id="pit-scout-climb-capabilities"
+                                id="robot-scout-climb-capabilities"
                                 name="climbCapabilities"
                                 rows="5"
                                 placeholder="Level, reliability, constraints"
@@ -956,7 +956,7 @@
                     <label class="block">
                         <span class="mb-2 block text-sm font-medium text-[#cfcfcf]">Technical Observations</span>
                         <textarea
-                            id="pit-scout-technical-notes"
+                            id="robot-scout-technical-notes"
                             name="technicalNotes"
                             rows="5"
                             class="w-full resize-y rounded-[6px] border border-[#2a2a2a] bg-[#141414] px-4 py-3 text-base text-[#e8e8e8] outline-0 focus:border-[#666]"
@@ -965,18 +965,18 @@
 
                     <div class="sticky bottom-0 -mx-4 mt-auto flex flex-col gap-3 border-t border-[#1e1e1e] bg-[#0d0d0d]/95 px-4 py-4 backdrop-blur sm:mx-0 sm:flex-row sm:items-center sm:justify-between sm:px-0">
                         <p
-                            id="pit-scout-status"
+                            id="robot-scout-status"
                             class="hidden text-sm font-medium text-[#cfcfcf]"
                             role="status"
                             aria-live="polite"
                         ></p>
                         <button
-                            id="pit-scout-save-btn"
+                            id="robot-scout-save-btn"
                             type="submit"
                             class="btn-secondary flex min-h-12 items-center justify-center gap-2 px-6 text-base sm:ml-auto"
                         >
                             <i class="fas fa-save" aria-hidden="true"></i>
-                            <span>Save Pit Scout</span>
+                            <span>Save Robot Scout</span>
                         </button>
                     </div>
                 </form>
@@ -998,7 +998,7 @@
                             Teams
                         </h1>
                         <p class="mt-1 text-sm text-[#999]">
-                            Consolidated match and pit scout records.
+                            Consolidated match and robot scout records.
                         </p>
                     </div>
                     <div class="flex flex-wrap items-end gap-2">
@@ -1157,9 +1157,9 @@
                     </section>
                     <section class="min-w-0">
                         <h2 class="mb-3 text-lg font-semibold text-[#e8e8e8]">
-                            Pit Scout
+                            Robot Scout
                         </h2>
-                        <div id="team-detail-pit-scout" class="pb-6"></div>
+                        <div id="team-detail-robot-scout" class="pb-6"></div>
                     </section>
                 </div>
             </div>

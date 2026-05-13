@@ -3,7 +3,7 @@ import { preloadFieldImages } from "./manager.ts";
 import { hasProfile } from "./auth.ts";
 import { promptForIdentity } from "./authView.ts";
 import { HomeView } from "./homeView.ts";
-import { initMatchScout, initPitScout } from "./scoutView.ts";
+import { initMatchScout, initRobotScout } from "./scoutView.ts";
 import { initTeamDetailView } from "./teamDetailView.ts";
 import { initTeamsView } from "./teamsView.ts";
 import { processSyncQueue } from "./sync.ts";
@@ -134,7 +134,7 @@ async function initializeApp(): Promise<void> {
       strategyBoardElementId: "home-container",
     });
     initMatchScout();
-    initPitScout();
+    initRobotScout();
     initTeamDetailView();
     initTeamsView();
     homeView.showHome();

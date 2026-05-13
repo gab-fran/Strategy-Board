@@ -1,9 +1,12 @@
 import { get, set } from "idb-keyval";
-import type { MatchScoutEntry, PitScoutEntry } from "../models/scoutModels.ts";
+import type { MatchScoutEntry, RobotScoutEntry } from "../models/scoutModels.ts";
+import {
+  ensureRobotScoutStorageMigrated,
+  ROBOT_SCOUTS_STORAGE_KEY,
+} from "../scoutStorageKeys.ts";
 import { queueForSync } from "../sync.ts";
 
 const MATCH_SCOUTS_KEY = "strategy-board:match-scouts";
-const PIT_SCOUTS_KEY = "strategy-board:pit-scouts";
 
 type SaveScoutOptions = {
   queue?: boolean;
@@ -49,11 +52,12 @@ export async function getMatchScoutsByTeam(
   );
 }
 
-export async function savePitScout(
-  entry: PitScoutEntry,
+export async function saveRobotScout(
+  entry: RobotScoutEntry,
   options: SaveScoutOptions = {},
 ): Promise<void> {
-  const scouts = await getAllPitScouts();
+  await ensureRobotScoutStorageMigrated();
+  const scouts = await getAllRobotScouts();
   const normalizedTeamNumber = normalizeTeamNumber(entry.teamNumber);
   const existingIndex = scouts.findIndex(
     (scout) => normalizeTeamNumber(scout.teamNumber) === normalizedTeamNumber,
@@ -65,24 +69,25 @@ export async function savePitScout(
     scouts.push(entry);
   }
 
-  await set(PIT_SCOUTS_KEY, scouts);
+  await set(ROBOT_SCOUTS_STORAGE_KEY, scouts);
 
   if (options.queue !== false) {
     await queueForSync(entry);
   }
 }
 
-export async function getAllPitScouts(): Promise<PitScoutEntry[]> {
-  const scouts = await get<PitScoutEntry[]>(PIT_SCOUTS_KEY);
+export async function getAllRobotScouts(): Promise<RobotScoutEntry[]> {
+  await ensureRobotScoutStorageMigrated();
+  const scouts = await get<RobotScoutEntry[]>(ROBOT_SCOUTS_STORAGE_KEY);
 
   return Array.isArray(scouts) ? scouts : [];
 }
 
-export async function getPitScoutByTeam(
+export async function getRobotScoutByTeam(
   teamNumber: string | number,
-): Promise<PitScoutEntry | undefined> {
+): Promise<RobotScoutEntry | undefined> {
   const normalizedTeamNumber = normalizeTeamNumber(teamNumber);
-  const scouts = await getAllPitScouts();
+  const scouts = await getAllRobotScouts();
 
   return scouts.find(
     (scout) => normalizeTeamNumber(scout.teamNumber) === normalizedTeamNumber,

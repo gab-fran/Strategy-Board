@@ -2,7 +2,7 @@ import { buildTeamSummary } from "./aggregate.ts";
 import type { TeamSummary } from "./models/teamModels.ts";
 import {
   getAllMatchScouts,
-  getAllPitScouts,
+  getAllRobotScouts,
 } from "./services/scoutService.ts";
 
 const PANEL_ID = "scout-panel";
@@ -146,9 +146,9 @@ export async function loadScoutPanel(matchTeams: number[]): Promise<void> {
   renderLoading(panel);
 
   try {
-    const [matchScouts, pitScouts] = await Promise.all([
+    const [matchScouts, robotScouts] = await Promise.all([
       getAllMatchScouts(),
-      getAllPitScouts(),
+      getAllRobotScouts(),
     ]);
 
     if (loadId !== currentLoadId) {
@@ -156,8 +156,8 @@ export async function loadScoutPanel(matchTeams: number[]): Promise<void> {
     }
 
     const summaries = teamNumbers
-      .map((teamNumber) => buildTeamSummary(teamNumber, matchScouts, pitScouts))
-      .filter((summary) => summary.matchCount > 0 || summary.hasPitScout);
+      .map((teamNumber) => buildTeamSummary(teamNumber, matchScouts, robotScouts))
+      .filter((summary) => summary.matchCount > 0 || summary.hasRobotScout);
 
     if (summaries.length === 0) {
       renderEmpty(panel);

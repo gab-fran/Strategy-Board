@@ -6,20 +6,20 @@ import {
   loadSelectedFIRSTEvent,
   type FIRSTTeam,
 } from "./first.ts";
-import type { MatchScoutEntry, PitScoutEntry } from "./models/scoutModels.ts";
+import type { MatchScoutEntry, RobotScoutEntry } from "./models/scoutModels.ts";
 import { can } from "./permissions.ts";
 import {
-  getPitScoutByTeam,
+  getRobotScoutByTeam,
   saveMatchScout,
-  savePitScout,
+  saveRobotScout,
 } from "./services/scoutService.ts";
 
 const SCOUT_TEAM_DEBOUNCE_MS = 450;
 
-/** Set when the current event+team pair has passed FIRST roster validation (or loaded from storage). */
-let pitScoutLastValidatedTag: string | null = null;
+/** Set when the current event+team pair has passed FIRST roster validation for robot scout (or loaded from storage). */
+let robotScoutLastValidatedTag: string | null = null;
 
-const pitScoutValidatedTag = (eventKey: string, teamNumber: string): string =>
+const robotScoutValidatedTag = (eventKey: string, teamNumber: string): string =>
   `${eventKey.trim()}|${teamNumber.trim()}`;
 
 /** Set when the current event+team pair has passed FIRST roster validation for match scout. */
@@ -101,11 +101,11 @@ const setStatus = (message: string, type: "idle" | "success" | "error"): void =>
   status.classList.toggle("hidden", !message);
 };
 
-const setPitStatus = (
+const setRobotScoutStatus = (
   message: string,
   type: "idle" | "success" | "error",
 ): void => {
-  const status = getElement<HTMLElement>("pit-scout-status");
+  const status = getElement<HTMLElement>("robot-scout-status");
   if (!status) return;
 
   status.textContent = message;
@@ -113,9 +113,9 @@ const setPitStatus = (
   status.classList.toggle("hidden", !message);
 };
 
-const clearPitTeamFieldError = (): void => {
-  const input = getElement<HTMLInputElement>("pit-scout-team");
-  const feedback = getElement<HTMLElement>("pit-scout-team-feedback");
+const clearRobotScoutTeamFieldError = (): void => {
+  const input = getElement<HTMLInputElement>("robot-scout-team");
+  const feedback = getElement<HTMLElement>("robot-scout-team-feedback");
   if (input) {
     input.removeAttribute("aria-invalid");
     input.style.borderColor = "";
@@ -129,9 +129,9 @@ const clearPitTeamFieldError = (): void => {
 };
 
 /** Red border + message under the team field. */
-const setPitTeamFieldError = (message: string): void => {
-  const input = getElement<HTMLInputElement>("pit-scout-team");
-  const feedback = getElement<HTMLElement>("pit-scout-team-feedback");
+const setRobotScoutTeamFieldError = (message: string): void => {
+  const input = getElement<HTMLInputElement>("robot-scout-team");
+  const feedback = getElement<HTMLElement>("robot-scout-team-feedback");
   if (!input || !feedback) {
     return;
   }
@@ -193,10 +193,10 @@ const resetMatchScoutForm = (reapplyLockedEvent: () => void): void => {
   getElement<HTMLInputElement>("match-scout-match")?.focus();
 };
 
-const clearPitFirstDisplay = (): void => {
-  setValue("pit-scout-team-nickname", "");
-  setValue("pit-scout-team-location", "");
-  setValue("pit-scout-team-school", "");
+const clearRobotScoutFirstDisplay = (): void => {
+  setValue("robot-scout-team-nickname", "");
+  setValue("robot-scout-team-location", "");
+  setValue("robot-scout-team-school", "");
 };
 
 const clearMatchTeamNameDisplay = (): void => {
@@ -205,34 +205,34 @@ const clearMatchTeamNameDisplay = (): void => {
 
 const applyTeamDisplayFromFirst = (team: FIRSTTeam): void => {
   const d = getTeamDisplayFields(team);
-  setValue("pit-scout-team-nickname", d.nickname);
-  setValue("pit-scout-team-location", d.location);
-  setValue("pit-scout-team-school", d.school);
+  setValue("robot-scout-team-nickname", d.nickname);
+  setValue("robot-scout-team-location", d.location);
+  setValue("robot-scout-team-school", d.school);
 };
 
-/** Clears saved pit fields only (not event lock or FIRST display row). */
-const clearPitScoutSavedFieldsOnly = (): void => {
-  setValue("pit-scout-drivetrain", "");
-  setValue("pit-scout-auto-capabilities", "");
-  setValue("pit-scout-climb-capabilities", "");
-  setValue("pit-scout-weight", "");
-  setValue("pit-scout-technical-notes", "");
+/** Clears saved robot scout fields only (not event lock or FIRST display row). */
+const clearRobotScoutSavedFieldsOnly = (): void => {
+  setValue("robot-scout-drivetrain", "");
+  setValue("robot-scout-auto-capabilities", "");
+  setValue("robot-scout-climb-capabilities", "");
+  setValue("robot-scout-weight", "");
+  setValue("robot-scout-technical-notes", "");
 };
 
-const resetPitScoutForm = (reapplyLockedEvent: () => void): void => {
-  getRequiredElement<HTMLFormElement>("pit-scout-form").reset();
-  pitScoutLastValidatedTag = null;
-  clearPitFirstDisplay();
-  clearPitTeamFieldError();
+const resetRobotScoutForm = (reapplyLockedEvent: () => void): void => {
+  getRequiredElement<HTMLFormElement>("robot-scout-form").reset();
+  robotScoutLastValidatedTag = null;
+  clearRobotScoutFirstDisplay();
+  clearRobotScoutTeamFieldError();
   reapplyLockedEvent();
-  setPitStatus("", "idle");
-  getElement<HTMLInputElement>("pit-scout-team")?.focus();
+  setRobotScoutStatus("", "idle");
+  getElement<HTMLInputElement>("robot-scout-team")?.focus();
 };
 
 const showHomeScreen = (): void => {
   for (const id of [
     "match-scout-screen",
-    "pit-scout-screen",
+    "robot-scout-screen",
     "teams-screen",
     "team-detail-screen",
   ]) {
@@ -332,27 +332,27 @@ const createMatchScoutEntry = async (): Promise<MatchScoutEntry | undefined> => 
   };
 };
 
-const fillPitScoutForm = (entry: PitScoutEntry): void => {
-  setValue("pit-scout-team", entry.teamNumber);
-  setValue("pit-scout-drivetrain", entry.drivetrain);
-  setValue("pit-scout-auto-capabilities", entry.autoCapabilities);
-  setValue("pit-scout-climb-capabilities", entry.climbCapabilities);
-  setValue("pit-scout-weight", entry.weight);
-  setValue("pit-scout-technical-notes", entry.technicalNotes);
+const fillRobotScoutForm = (entry: RobotScoutEntry): void => {
+  setValue("robot-scout-team", entry.teamNumber);
+  setValue("robot-scout-drivetrain", entry.drivetrain);
+  setValue("robot-scout-auto-capabilities", entry.autoCapabilities);
+  setValue("robot-scout-climb-capabilities", entry.climbCapabilities);
+  setValue("robot-scout-weight", entry.weight);
+  setValue("robot-scout-technical-notes", entry.technicalNotes);
 };
 
-const createPitScoutEntry = async (
-  existingEntry?: PitScoutEntry,
-): Promise<PitScoutEntry | undefined> => {
+const createRobotScoutEntry = async (
+  existingEntry?: RobotScoutEntry,
+): Promise<RobotScoutEntry | undefined> => {
   const profile = await loadProfile();
 
   if (!profile) {
-    setPitStatus("Save your profile before pit scouting.", "error");
+    setRobotScoutStatus("Save your profile before robot scouting.", "error");
     return undefined;
   }
 
   if (!can("create-scout", profile.role)) {
-    setPitStatus("Your role cannot create pit scouts.", "error");
+    setRobotScoutStatus("Your role cannot create robot scouts.", "error");
     return undefined;
   }
 
@@ -361,32 +361,32 @@ const createPitScoutEntry = async (
     existingEntry.createdByTeam !== profile.teamNumber &&
     !can("edit", profile.role)
   ) {
-    setPitStatus("Your role cannot edit pit scouts from another team.", "error");
+    setRobotScoutStatus("Your role cannot edit robot scouts from another team.", "error");
     return undefined;
   }
 
   const selected = loadSelectedFIRSTEvent();
   if (!selected) {
-    setPitStatus(
-      "Select an event on the home screen before pit scouting.",
+    setRobotScoutStatus(
+      "Select an event on the home screen before robot scouting.",
       "error",
     );
     return undefined;
   }
 
   const eventKey = buildScoutingEventKeyFromSelection(selected);
-  const teamNumber = readText("pit-scout-team");
+  const teamNumber = readText("robot-scout-team");
 
   if (!teamNumber) {
-    setPitStatus("Fill in the team number before saving.", "error");
+    setRobotScoutStatus("Fill in the team number before saving.", "error");
     return undefined;
   }
 
   if (
-    !pitScoutLastValidatedTag ||
-    pitScoutLastValidatedTag !== pitScoutValidatedTag(eventKey, teamNumber)
+    !robotScoutLastValidatedTag ||
+    robotScoutLastValidatedTag !== robotScoutValidatedTag(eventKey, teamNumber)
   ) {
-    setPitStatus(
+    setRobotScoutStatus(
       "Verify the team number against the official event roster before saving.",
       "error",
     );
@@ -394,7 +394,7 @@ const createPitScoutEntry = async (
   }
 
   const now = new Date().toISOString();
-  const weight = readNumber("pit-scout-weight");
+  const weight = readNumber("robot-scout-weight");
 
   return {
     id: existingEntry?.id ?? createId(),
@@ -406,11 +406,11 @@ const createPitScoutEntry = async (
     lastModifiedBy: existingEntry ? profile.userName : undefined,
     lastModifiedAt: existingEntry ? now : undefined,
     syncStatus: "pending",
-    drivetrain: readText("pit-scout-drivetrain"),
-    autoCapabilities: readText("pit-scout-auto-capabilities"),
-    climbCapabilities: readText("pit-scout-climb-capabilities"),
+    drivetrain: readText("robot-scout-drivetrain"),
+    autoCapabilities: readText("robot-scout-auto-capabilities"),
+    climbCapabilities: readText("robot-scout-climb-capabilities"),
     weight,
-    technicalNotes: readText("pit-scout-technical-notes"),
+    technicalNotes: readText("robot-scout-technical-notes"),
   };
 };
 
@@ -642,19 +642,19 @@ export function initMatchScout(): void {
   window.addEventListener("first:event-cleared", applyMatchLockedEvent);
 }
 
-export function initPitScout(): void {
-  const form = getElement<HTMLFormElement>("pit-scout-form");
+export function initRobotScout(): void {
+  const form = getElement<HTMLFormElement>("robot-scout-form");
 
   if (!form) {
     return;
   }
 
   const firstService = new FIRSTService();
-  let loadedEntry: PitScoutEntry | undefined;
+  let loadedEntry: RobotScoutEntry | undefined;
   let activeValidationId = 0;
   let debTimer: ReturnType<typeof setTimeout> | undefined;
 
-  const applyPitScoutPermissions = async (): Promise<void> => {
+  const applyRobotScoutPermissions = async (): Promise<void> => {
     const profile = await loadProfile();
     const canCreateScout = can("create-scout", profile?.role);
     const canEditLoadedEntry =
@@ -662,12 +662,12 @@ export function initPitScout(): void {
       loadedEntry.createdByTeam === profile?.teamNumber ||
       can("edit", profile?.role);
 
-    setButtonVisible("pit-scout-save-btn", canCreateScout && canEditLoadedEntry);
+    setButtonVisible("robot-scout-save-btn", canCreateScout && canEditLoadedEntry);
   };
 
-  const applyPitLockedEvent = (): void => {
-    const eventInput = getElement<HTMLInputElement>("pit-scout-event");
-    const teamField = getElement<HTMLInputElement>("pit-scout-team");
+  const applyRobotScoutLockedEvent = (): void => {
+    const eventInput = getElement<HTMLInputElement>("robot-scout-event");
+    const teamField = getElement<HTMLInputElement>("robot-scout-team");
     if (!eventInput) {
       return;
     }
@@ -675,13 +675,13 @@ export function initPitScout(): void {
     const selected = loadSelectedFIRSTEvent();
     if (!selected) {
       eventInput.value = "";
-      pitScoutLastValidatedTag = null;
+      robotScoutLastValidatedTag = null;
       if (teamField) {
         teamField.disabled = true;
       }
-      clearPitTeamFieldError();
-      setPitStatus(
-        "Select an event on the home screen before pit scouting.",
+      clearRobotScoutTeamFieldError();
+      setRobotScoutStatus(
+        "Select an event on the home screen before robot scouting.",
         "error",
       );
       return;
@@ -691,14 +691,14 @@ export function initPitScout(): void {
     if (teamField) {
       teamField.disabled = false;
     }
-    clearPitTeamFieldError();
+    clearRobotScoutTeamFieldError();
 
-    const status = getElement<HTMLElement>("pit-scout-status");
+    const status = getElement<HTMLElement>("robot-scout-status");
     if (
       status?.textContent ===
-      "Select an event on the home screen before pit scouting."
+      "Select an event on the home screen before robot scouting."
     ) {
-      setPitStatus("", "idle");
+      setRobotScoutStatus("", "idle");
     }
   };
 
@@ -707,7 +707,7 @@ export function initPitScout(): void {
     clearTimeout(debTimer);
   };
 
-  const runPitTeamValidation = async (
+  const runRobotScoutTeamValidation = async (
     requestId: number,
     teamNumber: string,
   ): Promise<void> => {
@@ -717,8 +717,8 @@ export function initPitScout(): void {
       if (requestId !== activeValidationId) {
         return;
       }
-      setPitStatus(
-        "Select an event on the home screen before pit scouting.",
+      setRobotScoutStatus(
+        "Select an event on the home screen before robot scouting.",
         "error",
       );
       return;
@@ -730,7 +730,7 @@ export function initPitScout(): void {
       if (requestId !== activeValidationId) {
         return;
       }
-      setPitStatus(
+      setRobotScoutStatus(
         "Configure VITE_FIRST_API_USERNAME and VITE_FIRST_API_AUTH_TOKEN to verify teams against the official FIRST API.",
         "error",
       );
@@ -741,18 +741,18 @@ export function initPitScout(): void {
       if (requestId !== activeValidationId) {
         return;
       }
-      pitScoutLastValidatedTag = null;
-      clearPitFirstDisplay();
-      clearPitTeamFieldError();
+      robotScoutLastValidatedTag = null;
+      clearRobotScoutFirstDisplay();
+      clearRobotScoutTeamFieldError();
       loadedEntry = undefined;
-      setPitStatus("", "idle");
-      void applyPitScoutPermissions();
+      setRobotScoutStatus("", "idle");
+      void applyRobotScoutPermissions();
       return;
     }
 
     try {
-      setPitStatus("Checking team on FIRST roster...", "idle");
-      clearPitTeamFieldError();
+      setRobotScoutStatus("Checking team on FIRST roster...", "idle");
+      clearRobotScoutTeamFieldError();
 
       const globalTeam = await firstService.getTeamBySeasonAndNumber(
         selected.season,
@@ -764,13 +764,13 @@ export function initPitScout(): void {
       }
 
       if (!globalTeam) {
-        setPitTeamFieldError("Invalid team.");
-        clearPitFirstDisplay();
-        clearPitScoutSavedFieldsOnly();
-        pitScoutLastValidatedTag = null;
+        setRobotScoutTeamFieldError("Invalid team.");
+        clearRobotScoutFirstDisplay();
+        clearRobotScoutSavedFieldsOnly();
+        robotScoutLastValidatedTag = null;
         loadedEntry = undefined;
-        setPitStatus("", "idle");
-        void applyPitScoutPermissions();
+        setRobotScoutStatus("", "idle");
+        void applyRobotScoutPermissions();
         return;
       }
 
@@ -785,22 +785,22 @@ export function initPitScout(): void {
       }
 
       if (!eventTeam) {
-        setPitTeamFieldError(
+        setRobotScoutTeamFieldError(
           "This team is not registered for this event.",
         );
-        clearPitFirstDisplay();
-        clearPitScoutSavedFieldsOnly();
-        pitScoutLastValidatedTag = null;
+        clearRobotScoutFirstDisplay();
+        clearRobotScoutSavedFieldsOnly();
+        robotScoutLastValidatedTag = null;
         loadedEntry = undefined;
-        setPitStatus("", "idle");
-        void applyPitScoutPermissions();
+        setRobotScoutStatus("", "idle");
+        void applyRobotScoutPermissions();
         return;
       }
 
-      clearPitTeamFieldError();
+      clearRobotScoutTeamFieldError();
       applyTeamDisplayFromFirst(eventTeam);
 
-      const entry = await getPitScoutByTeam(teamNumber);
+      const entry = await getRobotScoutByTeam(teamNumber);
 
       if (requestId !== activeValidationId) {
         return;
@@ -809,28 +809,28 @@ export function initPitScout(): void {
       loadedEntry = entry;
 
       if (entry) {
-        fillPitScoutForm(entry);
-        setPitStatus("Loaded existing pit scout for this team.", "idle");
+        fillRobotScoutForm(entry);
+        setRobotScoutStatus("Loaded existing robot scout for this team.", "idle");
       } else {
-        clearPitScoutSavedFieldsOnly();
-        setPitStatus("No pit scout saved for this team yet.", "idle");
+        clearRobotScoutSavedFieldsOnly();
+        setRobotScoutStatus("No robot scout saved for this team yet.", "idle");
       }
 
-      pitScoutLastValidatedTag = pitScoutValidatedTag(eventKey, teamNumber);
-      void applyPitScoutPermissions();
+      robotScoutLastValidatedTag = robotScoutValidatedTag(eventKey, teamNumber);
+      void applyRobotScoutPermissions();
     } catch (error) {
-      console.error("FIRST pit team validation failed:", error);
+      console.error("FIRST robot scout team validation failed:", error);
       if (requestId !== activeValidationId) {
         return;
       }
-      pitScoutLastValidatedTag = null;
-      clearPitFirstDisplay();
-      clearPitTeamFieldError();
-      setPitStatus(
+      robotScoutLastValidatedTag = null;
+      clearRobotScoutFirstDisplay();
+      clearRobotScoutTeamFieldError();
+      setRobotScoutStatus(
         "Could not verify this team with the FIRST API. Check credentials and your connection.",
         "error",
       );
-      void applyPitScoutPermissions();
+      void applyRobotScoutPermissions();
     }
   };
 
@@ -839,71 +839,71 @@ export function initPitScout(): void {
     debTimer = setTimeout(() => {
       const requestId = ++activeValidationId;
       const currentTeam = teamInput?.value.trim() ?? "";
-      void runPitTeamValidation(requestId, currentTeam);
+      void runRobotScoutTeamValidation(requestId, currentTeam);
     }, SCOUT_TEAM_DEBOUNCE_MS);
   };
 
-  applyPitLockedEvent();
-  window.addEventListener("first:event-selected", applyPitLockedEvent);
-  window.addEventListener("first:event-cleared", applyPitLockedEvent);
+  applyRobotScoutLockedEvent();
+  window.addEventListener("first:event-selected", applyRobotScoutLockedEvent);
+  window.addEventListener("first:event-cleared", applyRobotScoutLockedEvent);
 
-  void applyPitScoutPermissions();
+  void applyRobotScoutPermissions();
 
-  const teamInput = getElement<HTMLInputElement>("pit-scout-team");
+  const teamInput = getElement<HTMLInputElement>("robot-scout-team");
 
   teamInput?.addEventListener("input", () => {
     const teamNumber = teamInput.value.trim();
 
     if (!teamNumber) {
       invalidatePendingValidation();
-      clearPitFirstDisplay();
-      clearPitTeamFieldError();
-      pitScoutLastValidatedTag = null;
+      clearRobotScoutFirstDisplay();
+      clearRobotScoutTeamFieldError();
+      robotScoutLastValidatedTag = null;
       loadedEntry = undefined;
-      setPitStatus("", "idle");
-      void applyPitScoutPermissions();
+      setRobotScoutStatus("", "idle");
+      void applyRobotScoutPermissions();
       return;
     }
 
-    clearPitTeamFieldError();
+    clearRobotScoutTeamFieldError();
     scheduleTeamValidation();
   });
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    setPitStatus("Saving pit scout...", "idle");
-    clearPitTeamFieldError();
+    setRobotScoutStatus("Saving robot scout...", "idle");
+    clearRobotScoutTeamFieldError();
 
     try {
-      const entry = await createPitScoutEntry(loadedEntry);
+      const entry = await createRobotScoutEntry(loadedEntry);
 
       if (!entry) {
-        void applyPitScoutPermissions();
+        void applyRobotScoutPermissions();
         return;
       }
 
-      await savePitScout(entry);
+      await saveRobotScout(entry);
       loadedEntry = entry;
-      void applyPitScoutPermissions();
-      setPitStatus("Pit scout saved on this device.", "success");
-      console.info("Saved pit scout entry:", entry);
+      void applyRobotScoutPermissions();
+      setRobotScoutStatus("Robot scout saved on this device.", "success");
+      console.info("Saved robot scout entry:", entry);
       window.dispatchEvent(new Event("scout:data-updated"));
     } catch (error) {
-      console.error("Failed to save pit scout:", error);
-      setPitStatus("Could not save this pit scout. Try again.", "error");
+      console.error("Failed to save robot scout:", error);
+      setRobotScoutStatus("Could not save this robot scout. Try again.", "error");
     }
   });
 
-  getElement<HTMLButtonElement>("pit-scout-back-btn")?.addEventListener(
+  getElement<HTMLButtonElement>("robot-scout-back-btn")?.addEventListener(
     "click",
     showHomeScreen,
   );
-  getElement<HTMLButtonElement>("pit-scout-new-btn")?.addEventListener(
+  getElement<HTMLButtonElement>("robot-scout-new-btn")?.addEventListener(
     "click",
     () => {
       loadedEntry = undefined;
-      resetPitScoutForm(applyPitLockedEvent);
-      void applyPitScoutPermissions();
+      resetRobotScoutForm(applyRobotScoutLockedEvent);
+      void applyRobotScoutPermissions();
     },
   );
 }

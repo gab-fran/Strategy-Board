@@ -1,12 +1,15 @@
 import { get, set } from "idb-keyval";
-import type { MatchScoutEntry, PitScoutEntry } from "./models/scoutModels.ts";
+import type { MatchScoutEntry, RobotScoutEntry } from "./models/scoutModels.ts";
+import {
+  ensureRobotScoutStorageMigrated,
+  ROBOT_SCOUTS_STORAGE_KEY,
+} from "./scoutStorageKeys.ts";
 
-type ScoutEntry = MatchScoutEntry | PitScoutEntry;
-type CloudScoutEntry = ScoutEntry & { scoutType?: "match" | "pit" };
+type ScoutEntry = MatchScoutEntry | RobotScoutEntry;
+type CloudScoutEntry = ScoutEntry & { scoutType?: "match" | "pit" | "robot" };
 
 const SYNC_QUEUE_KEY = "sync_queue";
 const MATCH_SCOUTS_KEY = "strategy-board:match-scouts";
-const PIT_SCOUTS_KEY = "strategy-board:pit-scouts";
 
 const isMatchScout = (entry: ScoutEntry): entry is MatchScoutEntry =>
   "matchKey" in entry;
@@ -17,7 +20,10 @@ const getQueue = async (): Promise<ScoutEntry[]> => {
 };
 
 const markSyncedInLocalStore = async (entry: ScoutEntry): Promise<void> => {
-  const key = isMatchScout(entry) ? MATCH_SCOUTS_KEY : PIT_SCOUTS_KEY;
+  if (!isMatchScout(entry)) {
+    await ensureRobotScoutStorageMigrated();
+  }
+  const key = isMatchScout(entry) ? MATCH_SCOUTS_KEY : ROBOT_SCOUTS_STORAGE_KEY;
   const scouts = (await get<ScoutEntry[]>(key)) ?? [];
   const index = scouts.findIndex((scout) => scout.id === entry.id);
 
@@ -34,9 +40,12 @@ const markSyncedInLocalStore = async (entry: ScoutEntry): Promise<void> => {
 };
 
 const mergeLocalScout = async (entry: CloudScoutEntry): Promise<void> => {
+  if (entry.scoutType !== "match" && !isMatchScout(entry)) {
+    await ensureRobotScoutStorageMigrated();
+  }
   const key = entry.scoutType === "match" || isMatchScout(entry)
     ? MATCH_SCOUTS_KEY
-    : PIT_SCOUTS_KEY;
+    : ROBOT_SCOUTS_STORAGE_KEY;
   const scouts = (await get<ScoutEntry[]>(key)) ?? [];
   const index = scouts.findIndex((scout) => scout.id === entry.id);
   const syncedEntry = { ...entry, syncStatus: "synced" as const };
@@ -74,7 +83,7 @@ export async function uploadToFirebase(entry: ScoutEntry): Promise<void> {
   const cloud = await import("./cloud.ts");
   await cloud.uploadScout({
     ...entry,
-    scoutType: isMatchScout(entry) ? "match" : "pit",
+    scoutType: isMatchScout(entry) ? "match" : "robot",
   });
 }
 
