@@ -310,25 +310,22 @@ export class HomeView {
 
   private selectEvent(event: FIRSTEvent): void {
     const selectedEvent = saveSelectedFIRSTEvent(event, this.selectedSeason);
-    const scoutingEventKey = `${this.selectedSeason}${event.code}`.toLowerCase();
 
     this.setActiveEvent(event.code);
     this.updateLastEvent(selectedEvent);
-    this.prefillScoutingEvent(scoutingEventKey, event.code);
+    this.prefillScoutingEvent(event.code);
     this.showHome();
   }
 
-  private prefillScoutingEvent(
-    fullEventKey: string,
-    pitEventCodeDisplay: string,
-  ): void {
+  private prefillScoutingEvent(eventCode: string): void {
+    const display = eventCode.trim().toUpperCase();
     const matchInput = getElement<HTMLInputElement>("match-scout-event");
     if (matchInput) {
-      matchInput.value = fullEventKey;
+      matchInput.value = display;
     }
     const pitInput = getElement<HTMLInputElement>("pit-scout-event");
     if (pitInput) {
-      pitInput.value = pitEventCodeDisplay.trim().toUpperCase();
+      pitInput.value = display;
     }
   }
 

@@ -14,13 +14,22 @@ import {
   savePitScout,
 } from "./services/scoutService.ts";
 
-const PIT_TEAM_DEBOUNCE_MS = 450;
+const SCOUT_TEAM_DEBOUNCE_MS = 450;
 
 /** Set when the current event+team pair has passed FIRST roster validation (or loaded from storage). */
 let pitScoutLastValidatedTag: string | null = null;
 
 const pitScoutValidatedTag = (eventKey: string, teamNumber: string): string =>
   `${eventKey.trim()}|${teamNumber.trim()}`;
+
+/** Set when the current event+team pair has passed FIRST roster validation for match scout. */
+let matchScoutLastValidatedTag: string | null = null;
+
+const matchScoutValidatedTag = (eventKey: string, teamNumber: string): string =>
+  `${eventKey.trim()}|${teamNumber.trim()}`;
+
+const isCompleteTeamNumber = (raw: string): boolean =>
+  /^\d{1,5}$/.test(raw) && raw !== "0";
 
 const getElement = <T extends HTMLElement>(id: string): T | null =>
   document.getElementById(id) as T | null;
@@ -134,6 +143,35 @@ const setPitTeamFieldError = (message: string): void => {
   feedback.classList.remove("hidden");
 };
 
+const clearMatchTeamFieldError = (): void => {
+  const input = getElement<HTMLInputElement>("match-scout-team");
+  const feedback = getElement<HTMLElement>("match-scout-team-feedback");
+  if (input) {
+    input.removeAttribute("aria-invalid");
+    input.style.borderColor = "";
+    input.style.backgroundColor = "";
+    input.style.boxShadow = "";
+  }
+  if (feedback) {
+    feedback.textContent = "";
+    feedback.classList.add("hidden");
+  }
+};
+
+const setMatchTeamFieldError = (message: string): void => {
+  const input = getElement<HTMLInputElement>("match-scout-team");
+  const feedback = getElement<HTMLElement>("match-scout-team-feedback");
+  if (!input || !feedback) {
+    return;
+  }
+  input.setAttribute("aria-invalid", "true");
+  input.style.borderColor = "#dc2626";
+  input.style.backgroundColor = "rgba(127, 29, 29, 0.22)";
+  input.style.boxShadow = "0 0 0 1px #dc2626";
+  feedback.textContent = message;
+  feedback.classList.remove("hidden");
+};
+
 const setButtonVisible = (id: string, visible: boolean): void => {
   const button = getElement<HTMLButtonElement>(id);
 
@@ -145,16 +183,24 @@ const setButtonVisible = (id: string, visible: boolean): void => {
   button.disabled = !visible;
 };
 
-const resetMatchScoutForm = (): void => {
+const resetMatchScoutForm = (reapplyLockedEvent: () => void): void => {
   getRequiredElement<HTMLFormElement>("match-scout-form").reset();
+  matchScoutLastValidatedTag = null;
+  clearMatchTeamFieldError();
+  clearMatchTeamNameDisplay();
   setStatus("", "idle");
-  getElement<HTMLInputElement>("match-scout-event")?.focus();
+  reapplyLockedEvent();
+  getElement<HTMLInputElement>("match-scout-match")?.focus();
 };
 
 const clearPitFirstDisplay = (): void => {
   setValue("pit-scout-team-nickname", "");
   setValue("pit-scout-team-location", "");
   setValue("pit-scout-team-school", "");
+};
+
+const clearMatchTeamNameDisplay = (): void => {
+  setValue("match-scout-team-nickname", "");
 };
 
 const applyTeamDisplayFromFirst = (team: FIRSTTeam): void => {
@@ -218,12 +264,32 @@ const createMatchScoutEntry = async (): Promise<MatchScoutEntry | undefined> => 
     return undefined;
   }
 
-  const eventKey = readText("match-scout-event");
+  const selected = loadSelectedFIRSTEvent();
+  if (!selected) {
+    setStatus(
+      "Select an event on the home screen before match scouting.",
+      "error",
+    );
+    return undefined;
+  }
+
+  const eventKey = buildScoutingEventKeyFromSelection(selected);
   const matchNumber = readText("match-scout-match");
   const teamNumber = readText("match-scout-team");
 
-  if (!eventKey || !matchNumber || !teamNumber) {
-    setStatus("Fill in event, match, and team before saving.", "error");
+  if (!matchNumber || !teamNumber) {
+    setStatus("Fill in match and team before saving.", "error");
+    return undefined;
+  }
+
+  if (
+    !matchScoutLastValidatedTag ||
+    matchScoutLastValidatedTag !== matchScoutValidatedTag(eventKey, teamNumber)
+  ) {
+    setStatus(
+      "Verify the team number against the official event roster before saving.",
+      "error",
+    );
     return undefined;
   }
 
@@ -355,13 +421,193 @@ export function initMatchScout(): void {
     return;
   }
 
+  const firstService = new FIRSTService();
+  let activeValidationId = 0;
+  let debTimer: ReturnType<typeof setTimeout> | undefined;
+
+  const invalidatePendingValidation = (): void => {
+    activeValidationId++;
+    clearTimeout(debTimer);
+  };
+
+  const applyMatchLockedEvent = (): void => {
+    const eventInput = getElement<HTMLInputElement>("match-scout-event");
+    const teamField = getElement<HTMLInputElement>("match-scout-team");
+    if (!eventInput) {
+      return;
+    }
+
+    const selected = loadSelectedFIRSTEvent();
+    if (!selected) {
+      eventInput.value = "";
+      matchScoutLastValidatedTag = null;
+      if (teamField) {
+        teamField.disabled = true;
+      }
+      clearMatchTeamFieldError();
+      clearMatchTeamNameDisplay();
+      setStatus(
+        "Select an event on the home screen before match scouting.",
+        "error",
+      );
+      return;
+    }
+
+    eventInput.value = selected.code.trim().toUpperCase();
+    if (teamField) {
+      teamField.disabled = false;
+    }
+    clearMatchTeamFieldError();
+
+    const status = getElement<HTMLElement>("match-scout-status");
+    if (
+      status?.textContent ===
+      "Select an event on the home screen before match scouting."
+    ) {
+      setStatus("", "idle");
+    }
+  };
+
+  const runMatchTeamValidation = async (
+    requestId: number,
+    teamNumber: string,
+  ): Promise<void> => {
+    const selected = loadSelectedFIRSTEvent();
+
+    if (!selected) {
+      if (requestId !== activeValidationId) {
+        return;
+      }
+      setStatus(
+        "Select an event on the home screen before match scouting.",
+        "error",
+      );
+      return;
+    }
+
+    const eventKey = buildScoutingEventKeyFromSelection(selected);
+
+    if (!firstService.hasCredentials()) {
+      if (requestId !== activeValidationId) {
+        return;
+      }
+      clearMatchTeamNameDisplay();
+      setStatus(
+        "Configure VITE_FIRST_API_USERNAME and VITE_FIRST_API_AUTH_TOKEN to verify teams against the official FIRST API.",
+        "error",
+      );
+      return;
+    }
+
+    if (!isCompleteTeamNumber(teamNumber)) {
+      if (requestId !== activeValidationId) {
+        return;
+      }
+      matchScoutLastValidatedTag = null;
+      clearMatchTeamFieldError();
+      clearMatchTeamNameDisplay();
+      setStatus("", "idle");
+      return;
+    }
+
+    try {
+      setStatus("Checking team on FIRST roster...", "idle");
+      clearMatchTeamFieldError();
+
+      const globalTeam = await firstService.getTeamBySeasonAndNumber(
+        selected.season,
+        teamNumber,
+      );
+
+      if (requestId !== activeValidationId) {
+        return;
+      }
+
+      if (!globalTeam) {
+        setMatchTeamFieldError("Invalid team.");
+        matchScoutLastValidatedTag = null;
+        clearMatchTeamNameDisplay();
+        setStatus("", "idle");
+        return;
+      }
+
+      const eventTeam = await firstService.getTeamAtEvent(
+        selected.season,
+        selected.code,
+        teamNumber,
+      );
+
+      if (requestId !== activeValidationId) {
+        return;
+      }
+
+      if (!eventTeam) {
+        setMatchTeamFieldError(
+          "This team is not registered for this event.",
+        );
+        matchScoutLastValidatedTag = null;
+        clearMatchTeamNameDisplay();
+        setStatus("", "idle");
+        return;
+      }
+
+      clearMatchTeamFieldError();
+      setValue(
+        "match-scout-team-nickname",
+        getTeamDisplayFields(eventTeam).nickname,
+      );
+      setStatus("", "idle");
+      matchScoutLastValidatedTag = matchScoutValidatedTag(eventKey, teamNumber);
+    } catch (error) {
+      console.error("FIRST match team validation failed:", error);
+      if (requestId !== activeValidationId) {
+        return;
+      }
+      matchScoutLastValidatedTag = null;
+      clearMatchTeamFieldError();
+      clearMatchTeamNameDisplay();
+      setStatus(
+        "Could not verify this team with the FIRST API. Check credentials and your connection.",
+        "error",
+      );
+    }
+  };
+
+  const teamInput = getElement<HTMLInputElement>("match-scout-team");
+
+  const scheduleTeamValidation = (): void => {
+    clearTimeout(debTimer);
+    debTimer = setTimeout(() => {
+      const requestId = ++activeValidationId;
+      const currentTeam = teamInput?.value.trim() ?? "";
+      void runMatchTeamValidation(requestId, currentTeam);
+    }, SCOUT_TEAM_DEBOUNCE_MS);
+  };
+
   void loadProfile().then((profile) => {
     setButtonVisible("match-scout-save-btn", can("create-scout", profile?.role));
+  });
+
+  teamInput?.addEventListener("input", () => {
+    const teamNumber = teamInput.value.trim();
+
+    if (!teamNumber) {
+      invalidatePendingValidation();
+      clearMatchTeamFieldError();
+      clearMatchTeamNameDisplay();
+      matchScoutLastValidatedTag = null;
+      setStatus("", "idle");
+      return;
+    }
+
+    clearMatchTeamFieldError();
+    scheduleTeamValidation();
   });
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     setStatus("Saving scout...", "idle");
+    clearMatchTeamFieldError();
 
     try {
       const entry = await createMatchScoutEntry();
@@ -386,8 +632,14 @@ export function initMatchScout(): void {
   );
   getElement<HTMLButtonElement>("match-scout-new-btn")?.addEventListener(
     "click",
-    resetMatchScoutForm,
+    () => {
+      resetMatchScoutForm(applyMatchLockedEvent);
+    },
   );
+
+  applyMatchLockedEvent();
+  window.addEventListener("first:event-selected", applyMatchLockedEvent);
+  window.addEventListener("first:event-cleared", applyMatchLockedEvent);
 }
 
 export function initPitScout(): void {
@@ -454,9 +706,6 @@ export function initPitScout(): void {
     activeValidationId++;
     clearTimeout(debTimer);
   };
-
-  const isCompleteTeamNumber = (raw: string): boolean =>
-    /^\d{1,5}$/.test(raw) && raw !== "0";
 
   const runPitTeamValidation = async (
     requestId: number,
@@ -591,7 +840,7 @@ export function initPitScout(): void {
       const requestId = ++activeValidationId;
       const currentTeam = teamInput?.value.trim() ?? "";
       void runPitTeamValidation(requestId, currentTeam);
-    }, PIT_TEAM_DEBOUNCE_MS);
+    }, SCOUT_TEAM_DEBOUNCE_MS);
   };
 
   applyPitLockedEvent();
