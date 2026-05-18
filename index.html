@@ -568,25 +568,37 @@
                         </label>
                     </div>
 
-                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        <label class="block sm:col-span-2 lg:col-span-1">
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                        <label class="block">
+                            <span class="mb-2 block text-sm font-medium text-[#cfcfcf]">Match type</span>
+                            <select
+                                id="match-scout-match-type"
+                                name="matchType"
+                                class="w-full rounded-[6px] border border-[#2a2a2a] bg-[#141414] px-3 py-3 text-base text-[#e8e8e8] outline-0 focus:border-[#666]"
+                            >
+                                <option value="Qualification">Qualification</option>
+                                <option value="Practice">Practice</option>
+                                <option value="Playoff">Playoff</option>
+                            </select>
+                        </label>
+                        <label class="block">
                             <span class="mb-2 block text-sm font-medium text-[#cfcfcf]">Match</span>
-                            <input
+                            <select
                                 id="match-scout-match"
                                 name="matchNumber"
-                                type="text"
                                 required
-                                autocomplete="off"
-                                placeholder="qm12"
-                                class="w-full rounded-[6px] border border-[#2a2a2a] bg-[#141414] px-4 py-3 text-base text-[#e8e8e8] outline-0 focus:border-[#666]"
-                            />
+                                class="w-full rounded-[6px] border border-[#2a2a2a] bg-[#141414] px-4 py-3 text-base text-[#e8e8e8] outline-0 focus:border-[#666] disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <option value="">Select a match...</option>
+                            </select>
                         </label>
                         <label class="block">
                             <span class="mb-2 block text-sm font-medium text-[#cfcfcf]">Alliance</span>
                             <select
                                 id="match-scout-alliance"
                                 name="alliance"
-                                class="w-full rounded-[6px] border border-[#2a2a2a] bg-[#141414] px-3 py-3 text-base text-[#e8e8e8] outline-0 focus:border-[#666]"
+                                disabled
+                                class="w-full rounded-[6px] border border-[#2a2a2a] bg-[#141414] px-3 py-3 text-base text-[#e8e8e8] outline-0 focus:border-[#666] disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <option value="">-</option>
                                 <option value="red">Red</option>
@@ -598,7 +610,8 @@
                             <select
                                 id="match-scout-station"
                                 name="station"
-                                class="w-full rounded-[6px] border border-[#2a2a2a] bg-[#141414] px-3 py-3 text-base text-[#e8e8e8] outline-0 focus:border-[#666]"
+                                disabled
+                                class="w-full rounded-[6px] border border-[#2a2a2a] bg-[#141414] px-3 py-3 text-base text-[#e8e8e8] outline-0 focus:border-[#666] disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <option value="">-</option>
                                 <option value="1">1</option>

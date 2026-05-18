@@ -424,10 +424,46 @@ export function initMatchScout(): void {
   const firstService = new FIRSTService();
   let activeValidationId = 0;
   let debTimer: ReturnType<typeof setTimeout> | undefined;
+  let currentMatches: import("./first.ts").FIRSTMatch[] = [];
 
   const invalidatePendingValidation = (): void => {
     activeValidationId++;
     clearTimeout(debTimer);
+  };
+
+  const fetchMatchesForTeam = async (teamNumber: string) => {
+    const selected = loadSelectedFIRSTEvent();
+    if (!selected || !firstService.hasCredentials()) return;
+
+    const matchTypeSelect = getElement<HTMLSelectElement>("match-scout-match-type");
+    const tournamentLevel = matchTypeSelect?.value || "Qualification";
+
+    setStatus("Fetching matches...", "idle");
+    const matches = await firstService.getTeamMatches(
+      selected.season,
+      selected.code,
+      teamNumber,
+      tournamentLevel
+    );
+
+    currentMatches = matches;
+
+    const matchSelect = getElement<HTMLSelectElement>("match-scout-match");
+    if (matchSelect) {
+      matchSelect.innerHTML = '<option value="">Select a match...</option>';
+      for (const match of matches) {
+        const option = document.createElement("option");
+        option.value = String(match.matchNumber);
+        option.textContent = match.description;
+        matchSelect.appendChild(option);
+      }
+    }
+    
+    setStatus("", "idle");
+
+    if (matchSelect?.value) {
+      matchSelect.dispatchEvent(new Event("change"));
+    }
   };
 
   const applyMatchLockedEvent = (): void => {
@@ -558,6 +594,7 @@ export function initMatchScout(): void {
       );
       setStatus("", "idle");
       matchScoutLastValidatedTag = matchScoutValidatedTag(eventKey, teamNumber);
+      void fetchMatchesForTeam(teamNumber);
     } catch (error) {
       console.error("FIRST match team validation failed:", error);
       if (requestId !== activeValidationId) {
@@ -596,12 +633,51 @@ export function initMatchScout(): void {
       clearMatchTeamFieldError();
       clearMatchTeamNameDisplay();
       matchScoutLastValidatedTag = null;
+      currentMatches = [];
+      const matchSelect = getElement<HTMLSelectElement>("match-scout-match");
+      if (matchSelect) matchSelect.innerHTML = '<option value="">Select a match...</option>';
       setStatus("", "idle");
       return;
     }
 
     clearMatchTeamFieldError();
     scheduleTeamValidation();
+  });
+
+  getElement<HTMLSelectElement>("match-scout-match-type")?.addEventListener("change", () => {
+    const teamNumber = teamInput?.value.trim() ?? "";
+    const selected = loadSelectedFIRSTEvent();
+    if (selected && teamNumber && matchScoutLastValidatedTag === matchScoutValidatedTag(buildScoutingEventKeyFromSelection(selected), teamNumber)) {
+      void fetchMatchesForTeam(teamNumber);
+    }
+  });
+
+  const matchSelect = getElement<HTMLSelectElement>("match-scout-match");
+  matchSelect?.addEventListener("change", () => {
+    const value = matchSelect.value.trim().toLowerCase();
+    const match = currentMatches.find(m => String(m.matchNumber) === value);
+    
+    const allianceSelect = getElement<HTMLSelectElement>("match-scout-alliance");
+    const stationSelect = getElement<HTMLSelectElement>("match-scout-station");
+
+    if (match) {
+      const teamNumber = teamInput?.value.trim();
+      const team = match.teams.find(t => String(t.teamNumber) === teamNumber);
+      if (team && team.station) {
+        const stationLower = team.station.toLowerCase();
+
+        if (stationLower.startsWith("red")) {
+          if (allianceSelect) allianceSelect.value = "red";
+          if (stationSelect) stationSelect.value = stationLower.replace("red", "");
+        } else if (stationLower.startsWith("blue")) {
+          if (allianceSelect) allianceSelect.value = "blue";
+          if (stationSelect) stationSelect.value = stationLower.replace("blue", "");
+        }
+      }
+    } else {
+      if (allianceSelect) allianceSelect.value = "";
+      if (stationSelect) stationSelect.value = "";
+    }
   });
 
   form.addEventListener("submit", async (event) => {

@@ -48,6 +48,23 @@ type FIRSTTeamsResponse = {
   pageTotal?: number;
 };
 
+export type FIRSTMatchTeam = {
+  teamNumber: number;
+  station: string;
+  dq: boolean;
+};
+
+export type FIRSTMatch = {
+  description: string;
+  matchNumber: number;
+  tournamentLevel: string;
+  teams: FIRSTMatchTeam[];
+};
+
+type FIRSTMatchesResponse = {
+  Matches?: FIRSTMatch[];
+};
+
 export type SelectedFIRSTEvent = FIRSTEvent & {
   season: number;
   selectedAt: string;
@@ -247,6 +264,27 @@ export class FIRSTService {
       } while (page <= pageTotal && page <= maxPages);
     }
     return undefined;
+  }
+
+  /**
+   * Fetch matches for a specific team at an event.
+   * tournamentLevel can be "Qualification", "Practice", "Playoff".
+   */
+  public async getTeamMatches(
+    season: number,
+    eventCode: string,
+    teamNumber: string,
+    tournamentLevel: string,
+  ): Promise<FIRSTMatch[]> {
+    try {
+      const payload = await this.authorizedGet<FIRSTMatchesResponse>(
+        `${season}/matches/${eventCode}?teamNumber=${teamNumber}&tournamentLevel=${tournamentLevel}`,
+      );
+      return Array.isArray(payload.Matches) ? payload.Matches : [];
+    } catch (e) {
+      console.warn("Failed to fetch matches from FIRST API", e);
+      return [];
+    }
   }
 }
 
