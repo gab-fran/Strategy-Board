@@ -4,18 +4,27 @@ import {
   doc,
   setDoc,
   getDoc,
+  collection,
+  getDocs,
+  query,
+  where,
   Firestore,
 } from "firebase/firestore";
 import { Match } from "./match";
+import type { MatchScoutEntry, RobotScoutEntry } from "./models/scoutModels.ts";
+
+type CloudScoutEntry = (MatchScoutEntry | RobotScoutEntry) & {
+  scoutType: "match" | "pit" | "robot";
+};
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
-  authDomain: "strategyboard-app.firebaseapp.com",
-  projectId: "strategyboard-app",
-  storageBucket: "strategyboard-app.firebasestorage.app",
-  messagingSenderId: "297403143958",
-  appId: "1:297403143958:web:c140044272f5e73dca6237",
-  measurementId: "G-EMLW1J5N8X",
+  authDomain: "strategy-hub-fa705.firebaseapp.com",
+  projectId: "strategy-hub-fa705",
+  storageBucket: "strategy-hub-fa705.firebasestorage.app",
+  messagingSenderId: "1089355007546",
+  appId: "1:1089355007546:web:3038744a94479d3e7c9703",
+  measurementId: "G-W07734K8CX"
 };
 
 let db: Firestore | null = null;
@@ -129,4 +138,45 @@ export async function checkShareCode(shareCode: string): Promise<boolean> {
 
   const docSnap = await getDoc(doc(firestore, "matches", normalizedCode));
   return docSnap.exists();
+}
+
+function removeUndefinedValues<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+export async function uploadScout(entry: CloudScoutEntry): Promise<void> {
+  const firestore = getDb();
+  const payload = removeUndefinedValues({
+    ...entry,
+    syncStatus: "synced",
+    updatedAt: Date.now(),
+  });
+
+  await setDoc(doc(firestore, "scouting", entry.id), payload, { merge: true });
+}
+
+export async function downloadScouts(
+  eventKey: string,
+): Promise<CloudScoutEntry[]> {
+  const firestore = getDb();
+  const normalizedEventKey = eventKey.trim();
+
+  if (!normalizedEventKey) {
+    return [];
+  }
+
+  const snapshot = await getDocs(
+    query(
+      collection(firestore, "scouting"),
+      where("eventKey", "==", normalizedEventKey),
+    ),
+  );
+
+  return snapshot.docs.map(
+    (document) =>
+      ({
+        id: document.id,
+        ...document.data(),
+      }) as CloudScoutEntry,
+  );
 }
