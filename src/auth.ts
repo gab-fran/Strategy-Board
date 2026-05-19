@@ -1,4 +1,4 @@
-import { get, set } from "idb-keyval";
+import { del, get, set } from "idb-keyval";
 import type { UserProfile } from "./models/userModels.ts";
 
 const USER_PROFILE_KEY = "strategy-board:user-profile";
@@ -34,4 +34,14 @@ export async function loadProfile(): Promise<UserProfile | undefined> {
 
 export async function hasProfile(): Promise<boolean> {
   return Boolean(await loadProfile());
+}
+
+export async function clearProfile(): Promise<void> {
+  await del(USER_PROFILE_KEY);
+
+  try {
+    localStorage.removeItem(LEGACY_TEAM_NUMBER_KEY);
+  } catch (error) {
+    console.warn("Could not clear team number from localStorage:", error);
+  }
 }

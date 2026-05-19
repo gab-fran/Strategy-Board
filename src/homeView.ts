@@ -1,4 +1,4 @@
-import { loadProfile } from "./auth.ts";
+import { clearProfile, loadProfile } from "./auth.ts";
 import {
   FIRSTService,
   type FIRSTEvent,
@@ -114,9 +114,27 @@ export class HomeView {
         void this.loadEvents();
       },
     );
+    getElement<HTMLButtonElement>("home-logout-btn")?.addEventListener(
+      "click",
+      () => this.logout(),
+    );
 
     window.addEventListener("online", () => this.updateConnectionStatus());
     window.addEventListener("offline", () => this.updateConnectionStatus());
+  }
+
+  private async logout(): Promise<void> {
+    try {
+      await clearProfile();
+      window.location.reload();
+    } catch (error) {
+      console.error("Failed to clear profile:", error);
+      const status = getElement<HTMLElement>("home-module-status");
+      if (status) {
+        status.textContent = "Could not sign out. Please try again.";
+        status.classList.remove("hidden");
+      }
+    }
   }
 
   private async applyPermissions(): Promise<void> {
